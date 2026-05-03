@@ -64,7 +64,7 @@ class DefaultTileScorerAndLossModelTest {
             extremeCropAlpha = 4.0f,
             mismatchAmplify = 0.30f
         )
-        val scorer = DefaultTileScorer(weights, lut = CollageTuning.current.resources.powerLookupTable)
+        val scorer = DefaultTileScorer(weights, lut = CollageTuning.default.resources.powerLookupTable)
 
         val p = Photo(1, 1000f, 1000f)
         val box = RectF(
@@ -80,7 +80,7 @@ class DefaultTileScorerAndLossModelTest {
     @Test
     fun scorer_prefers_contain_when_crop_crosses_cutoff() {
         val weights = FitWeights.Default.copy(cropCutoff = 0.20f)
-        val scorer = DefaultTileScorer(weights, lut = CollageTuning.current.resources.powerLookupTable)
+        val scorer = DefaultTileScorer(weights, lut = CollageTuning.default.resources.powerLookupTable)
 
         val p = Photo(1, 1000f, 1000f)
         val box = RectF(

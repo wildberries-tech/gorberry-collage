@@ -274,5 +274,5 @@ internal object CollageTuning {
     )
 
     /** Current tuning used by newly created engine instances */
-    var current: Snapshot = Snapshot()
+    val default: Snapshot = Snapshot()
 }

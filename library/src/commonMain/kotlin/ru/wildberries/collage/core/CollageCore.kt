@@ -1,10 +1,5 @@
 package ru.wildberries.collage.core
 
-import ru.wildberries.collage.api.Clock
-import ru.wildberries.collage.api.CollageEngine
-import ru.wildberries.collage.api.EngineConfig
-import ru.wildberries.collage.api.Logger
-import ru.wildberries.collage.api.NoopLogger
 import ru.wildberries.collage.cache.LossCache
 import ru.wildberries.collage.cache.PlanCache
 import ru.wildberries.collage.model.CollageGeometry
@@ -28,9 +23,9 @@ internal class CollageCore(
     private val planCache: PlanCache = PlanCache(),
     private val lossCache: LossCache = LossCache(),
     private val planner: RowPlanner = RowPlanner(),
-    private val tuning: CollageTuning.Snapshot = CollageTuning.current,
+    private val tuning: CollageTuning.Snapshot = CollageTuning.default,
     private val config: EngineConfig = EngineConfig(),
-) : CollageEngine {
+) {
 
     private data class RowBuildResult(
         val rows: List<RowGeometry>,
@@ -93,7 +88,7 @@ internal class CollageCore(
         return CollageGeometry(width, h, listOf(RowGeometry(0f, h, listOf(tile))))
     }
 
-    override fun arrangeWithGeometry(photos: List<Photo>): CollageGeometry {
+    fun arrangeWithGeometry(photos: List<Photo>): CollageGeometry {
         planCache.clear()
         lossCache.clear()
 

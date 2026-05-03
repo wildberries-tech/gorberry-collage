@@ -1,14 +1,20 @@
 package ru.wildberries.collage
 
-import ru.wildberries.collage.api.Clock
-import ru.wildberries.collage.api.CollageEngine
-import ru.wildberries.collage.api.EngineConfig
-import ru.wildberries.collage.api.Logger
-import ru.wildberries.collage.api.createGridSearchEngine
+import ru.wildberries.collage.cache.LossCache
+import ru.wildberries.collage.cache.PlanCache
+import ru.wildberries.collage.core.Clock
+import ru.wildberries.collage.core.CollageCore
 import ru.wildberries.collage.core.CollageTuning
+import ru.wildberries.collage.core.EngineConfig
+import ru.wildberries.collage.core.Logger
+import ru.wildberries.collage.core.RowPlanner
+import ru.wildberries.collage.model.CollageGeometry
 import ru.wildberries.collage.model.Photo
 import ru.wildberries.collage.strategy.DefaultRowCostAugmentor
+import ru.wildberries.collage.strategy.DefaultTileRenderer
+import ru.wildberries.collage.strategy.DefaultTileScorer
 import ru.wildberries.collage.strategy.FitWeights
+import ru.wildberries.collage.strategy.RowCostAugmentor
 import kotlin.random.Random
 
 class TestClock : Clock {
@@ -23,24 +29,40 @@ class TestLogger : Logger {
     }
 }
 
+/**
+ * Test-only wrapper around the internal algorithm.
+ *
+ * Public API tests should use [CollageEngine].
+ * Internal quality/tuning tests can use this wrapper to keep the old
+ * arrangeWithGeometry-style assertions.
+ */
+class TestLayoutEngine internal constructor(
+    private val core: CollageCore,
+) {
+
+    fun arrangeWithGeometry(photos: List<Photo>): CollageGeometry {
+        return core.arrangeWithGeometry(photos)
+    }
+}
+
 object TestKit {
 
-    fun engine(
+    internal fun engine(
         cfg: EngineConfig,
         weights: FitWeights = FitWeights.Default,
         logger: Logger = TestLogger(),
-    ): CollageEngine =
-        createGridSearchEngine(
-            clock = TestClock(),
-            logger = logger,
-            config = cfg,
-            weights = weights,
-            augmentor = null,
-            scorer = null,
-            renderer = null
+    ): TestLayoutEngine {
+        return TestLayoutEngine(
+            createTestCore(
+                config = cfg,
+                weights = weights,
+                logger = logger,
+                augmentor = null,
+            )
         )
+    }
 
-    fun engineAug(
+    internal fun engineAug(
         cfg: EngineConfig,
         weights: FitWeights = FitWeights.Default,
         logger: Logger = TestLogger(),
@@ -49,47 +71,73 @@ object TestKit {
         stickPenaltyAlpha: Double,
         fourMixPenalty: Double,
         equalizePerRowAlpha: Double,
-    ): CollageEngine {
-        val a = CollageTuning.current.augmentor
-        val aug = DefaultRowCostAugmentor(
-            widow = a.widow,
-            penaltyPerExtraHorizontal = a.penaltyPerExtraHorizontal,
-            penaltyTwoHorizontalsInOneRow = a.penaltyTwoHorizontalsInOneRow,
-            penaltyThreeHorizontalsInOneRow = a.penaltyThreeHorizontalsInOneRow,
-            topHeavinessAlpha = a.topHeavinessAlpha,
-            lastRowTallAlpha = a.lastRowTallAlpha,
-            firstRowShortAlpha = a.firstRowShortAlpha,
-            preferThreeVerticalsBonus = a.preferThreeVerticalsBonus,
-            rowContrastAlpha = a.rowContrastAlpha,
-            rowWidthBalanceAlpha = a.rowWidthBalanceAlpha,
-            verticalSquashGuardFracOfWidth = a.verticalSquashGuardFracOfWidth,
-            verticalSquashAlpha = a.verticalSquashAlpha,
-            rowHeightSmoothAlpha = a.rowHeightSmoothAlpha,
-            heightBudgetAlpha = a.heightBudgetAlpha,
+    ): TestLayoutEngine {
+        val baseAugmentorConfig = CollageTuning.default.augmentor
+
+        val augmentor = DefaultRowCostAugmentor(
+            widow = baseAugmentorConfig.widow,
+            penaltyPerExtraHorizontal = baseAugmentorConfig.penaltyPerExtraHorizontal,
+            penaltyTwoHorizontalsInOneRow = baseAugmentorConfig.penaltyTwoHorizontalsInOneRow,
+            penaltyThreeHorizontalsInOneRow = baseAugmentorConfig.penaltyThreeHorizontalsInOneRow,
+            topHeavinessAlpha = baseAugmentorConfig.topHeavinessAlpha,
+            lastRowTallAlpha = baseAugmentorConfig.lastRowTallAlpha,
+            firstRowShortAlpha = baseAugmentorConfig.firstRowShortAlpha,
+            preferThreeVerticalsBonus = baseAugmentorConfig.preferThreeVerticalsBonus,
+            rowContrastAlpha = baseAugmentorConfig.rowContrastAlpha,
+            rowWidthBalanceAlpha = baseAugmentorConfig.rowWidthBalanceAlpha,
+            verticalSquashGuardFracOfWidth = baseAugmentorConfig.verticalSquashGuardFracOfWidth,
+            verticalSquashAlpha = baseAugmentorConfig.verticalSquashAlpha,
+            rowHeightSmoothAlpha = baseAugmentorConfig.rowHeightSmoothAlpha,
+            heightBudgetAlpha = baseAugmentorConfig.heightBudgetAlpha,
             stickGamma4 = stickGamma4,
             stickGamma3 = stickGamma3,
             stickPenaltyAlpha = stickPenaltyAlpha,
             fourMixPenalty = fourMixPenalty,
             equalizePerRowAlpha = equalizePerRowAlpha,
-            kpAlpha = a.kpAlpha,
-            kpPower = a.kpPower,
-            fitnessJumpAlpha = a.fitnessJumpAlpha,
-            fillAlpha = a.fillAlpha,
-            tightBuckets = a.tightBuckets,
-            bonusAlpha = a.bonusAlpha,
-            allowNegativeTotalPenalty = a.allowNegativeTotalPenalty,
-            bonusRowLenTol = a.bonusRowLenTol,
-            bonusEqualHeightsAlpha = a.bonusEqualHeightsAlpha,
-            bonusEqualHeightsTolFrac = a.bonusEqualHeightsTolFrac
+            kpAlpha = baseAugmentorConfig.kpAlpha,
+            kpPower = baseAugmentorConfig.kpPower,
+            fitnessJumpAlpha = baseAugmentorConfig.fitnessJumpAlpha,
+            fillAlpha = baseAugmentorConfig.fillAlpha,
+            tightBuckets = baseAugmentorConfig.tightBuckets,
+            bonusAlpha = baseAugmentorConfig.bonusAlpha,
+            allowNegativeTotalPenalty = baseAugmentorConfig.allowNegativeTotalPenalty,
+            bonusRowLenTol = baseAugmentorConfig.bonusRowLenTol,
+            bonusEqualHeightsAlpha = baseAugmentorConfig.bonusEqualHeightsAlpha,
+            bonusEqualHeightsTolFrac = baseAugmentorConfig.bonusEqualHeightsTolFrac,
         )
-        return createGridSearchEngine(
+
+        return TestLayoutEngine(
+            createTestCore(
+                config = cfg,
+                weights = weights,
+                logger = logger,
+                augmentor = augmentor,
+            )
+        )
+    }
+
+    private fun createTestCore(
+        config: EngineConfig,
+        weights: FitWeights,
+        logger: Logger,
+        augmentor: RowCostAugmentor?,
+    ): CollageCore {
+        val tuning = CollageTuning.default
+
+        return CollageCore(
+            scorer = DefaultTileScorer(
+                weights = weights,
+                lut = tuning.resources.powerLookupTable,
+            ),
+            renderer = DefaultTileRenderer(),
+            rowAugmentor = augmentor ?: DefaultRowCostAugmentor(),
             clock = TestClock(),
             logger = logger,
-            config = cfg,
-            weights = weights,
-            augmentor = aug,
-            scorer = null,
-            renderer = null
+            planCache = PlanCache(),
+            lossCache = LossCache(),
+            planner = RowPlanner(tuning = tuning),
+            tuning = tuning,
+            config = config,
         )
     }
 

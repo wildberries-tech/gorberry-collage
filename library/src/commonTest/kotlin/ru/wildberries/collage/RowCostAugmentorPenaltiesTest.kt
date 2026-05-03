@@ -13,7 +13,7 @@ class RowCostAugmentorPenaltiesTest {
     @Test
     fun vertical_squash_penalty_triggers_when_height_below_guard() {
         val collageWidth = 360f
-        val guardFrac = CollageTuning.current.augmentor.verticalSquashGuardFracOfWidth
+        val guardFrac = CollageTuning.default.augmentor.verticalSquashGuardFracOfWidth
         val guardH = guardFrac * collageWidth
 
         fun ctxWithHeight(h: Float) = RowPenaltyContext(
@@ -29,11 +29,11 @@ class RowCostAugmentorPenaltiesTest {
             ),
             collageWidth = collageWidth, verticalGap = 6f,
             nextRowFirstHeight = null, nextMostlyV = false, tailTotalHeight = 0f,
-            contrastTau = CollageTuning.current.dynamicProgrammingConfig.contrastTau,
-            rowContrastAlpha = CollageTuning.current.augmentor.rowContrastAlpha,
-            rowWidthBalanceAlpha = CollageTuning.current.augmentor.rowWidthBalanceAlpha,
+            contrastTau = CollageTuning.default.dynamicProgrammingConfig.contrastTau,
+            rowContrastAlpha = CollageTuning.default.augmentor.rowContrastAlpha,
+            rowWidthBalanceAlpha = CollageTuning.default.augmentor.rowWidthBalanceAlpha,
             verticalSquashGuardFracOfWidth = guardFrac,
-            verticalSquashAlpha = CollageTuning.current.augmentor.verticalSquashAlpha,
+            verticalSquashAlpha = CollageTuning.default.augmentor.verticalSquashAlpha,
             rowHeightSmoothAlpha = 0.0,
             heightBudgetAlpha = 0.0,
             maxHeightAllowed = Float.POSITIVE_INFINITY,
@@ -60,8 +60,8 @@ class RowCostAugmentorPenaltiesTest {
             preferThreeVerticalsBonus = 0.0,
             rowContrastAlpha = 0.0,
             rowWidthBalanceAlpha = 0.0,
-            verticalSquashGuardFracOfWidth = CollageTuning.current.augmentor.verticalSquashGuardFracOfWidth,
-            verticalSquashAlpha = CollageTuning.current.augmentor.verticalSquashAlpha,
+            verticalSquashGuardFracOfWidth = CollageTuning.default.augmentor.verticalSquashGuardFracOfWidth,
+            verticalSquashAlpha = CollageTuning.default.augmentor.verticalSquashAlpha,
             rowHeightSmoothAlpha = 0.0,
             heightBudgetAlpha = 0.0,
             stickGamma4 = 0.0f,
@@ -73,7 +73,7 @@ class RowCostAugmentorPenaltiesTest {
             kpPower = 1.0,
             fitnessJumpAlpha = 0.0,
             fillAlpha = 0.0,
-            tightBuckets = CollageTuning.current.augmentor.tightBuckets
+            tightBuckets = CollageTuning.default.augmentor.tightBuckets
         )
 
         val penAt = augmentor.totalPenalty(ctxWithHeight(guardH))
@@ -88,7 +88,7 @@ class RowCostAugmentorPenaltiesTest {
     @Test
     fun contrast_penalty_triggers_for_two_vertical_rows_with_big_height_ratio() {
         val collageWidth = 360f
-        val tau = CollageTuning.current.dynamicProgrammingConfig.contrastTau
+        val tau = CollageTuning.default.dynamicProgrammingConfig.contrastTau
 
         fun ctxWithNext(nextH: Float) = RowPenaltyContext(
             length = 3, isLastRow = false,
@@ -103,10 +103,10 @@ class RowCostAugmentorPenaltiesTest {
             collageWidth = collageWidth, verticalGap = 6f,
             nextRowFirstHeight = nextH, nextMostlyV = true, tailTotalHeight = 0f,
             contrastTau = tau,
-            rowContrastAlpha = CollageTuning.current.augmentor.rowContrastAlpha,
-            rowWidthBalanceAlpha = CollageTuning.current.augmentor.rowWidthBalanceAlpha,
-            verticalSquashGuardFracOfWidth = CollageTuning.current.augmentor.verticalSquashGuardFracOfWidth,
-            verticalSquashAlpha = CollageTuning.current.augmentor.verticalSquashAlpha,
+            rowContrastAlpha = CollageTuning.default.augmentor.rowContrastAlpha,
+            rowWidthBalanceAlpha = CollageTuning.default.augmentor.rowWidthBalanceAlpha,
+            verticalSquashGuardFracOfWidth = CollageTuning.default.augmentor.verticalSquashGuardFracOfWidth,
+            verticalSquashAlpha = CollageTuning.default.augmentor.verticalSquashAlpha,
             rowHeightSmoothAlpha = 0.0,
             heightBudgetAlpha = 0.0,
             maxHeightAllowed = Float.POSITIVE_INFINITY,
@@ -131,9 +131,9 @@ class RowCostAugmentorPenaltiesTest {
             lastRowTallAlpha = 0.0,
             firstRowShortAlpha = 0.0,
             preferThreeVerticalsBonus = 0.0,
-            rowContrastAlpha = CollageTuning.current.augmentor.rowContrastAlpha,
+            rowContrastAlpha = CollageTuning.default.augmentor.rowContrastAlpha,
             rowWidthBalanceAlpha = 0.0,
-            verticalSquashGuardFracOfWidth = CollageTuning.current.augmentor.verticalSquashGuardFracOfWidth,
+            verticalSquashGuardFracOfWidth = CollageTuning.default.augmentor.verticalSquashGuardFracOfWidth,
             verticalSquashAlpha = 0.0,
             rowHeightSmoothAlpha = 0.0,
             heightBudgetAlpha = 0.0,
@@ -146,7 +146,7 @@ class RowCostAugmentorPenaltiesTest {
             kpPower = 1.0,
             fitnessJumpAlpha = 0.0,
             fillAlpha = 0.0,
-            tightBuckets = CollageTuning.current.augmentor.tightBuckets
+            tightBuckets = CollageTuning.default.augmentor.tightBuckets
         )
 
         val nextOverTau = 200f / (tau + 0.05f)
@@ -163,79 +163,116 @@ class RowCostAugmentorPenaltiesTest {
 
     @Test
     fun bonus_row_len_uniform_prefers_balanced_split() {
-        val cfg = CollageTuning.current
-        CollageTuning.current = cfg.copy(
-            augmentor = cfg.augmentor.copy(
-                bonusAlpha = 1.0, allowNegativeTotalPenalty = true,
-                bonusRowLenUniformAlpha = 40_000.0, bonusRowLenTol = 1.0,
-                rowContrastAlpha = 0.0, verticalSquashAlpha = 0.0,
-                rowWidthBalanceAlpha = 0.0, stickPenaltyAlpha = 0.0,
-                topHeavinessAlpha = 0.0, preferThreeVerticalsBonus = 0.0,
-                rowHeightSmoothAlpha = 0.0, heightBudgetAlpha = 0.0, fillAlpha = 0.0
-            )
+        val augmentor = DefaultRowCostAugmentor(
+            bonusAlpha = 1.0,
+            allowNegativeTotalPenalty = true,
+            bonusRowLenUniformAlpha = 40_000.0,
+            bonusRowLenTol = 1.0,
+            rowContrastAlpha = 0.0,
+            verticalSquashAlpha = 0.0,
+            rowWidthBalanceAlpha = 0.0,
+            stickPenaltyAlpha = 0.0,
+            topHeavinessAlpha = 0.0,
+            preferThreeVerticalsBonus = 0.0,
+            rowHeightSmoothAlpha = 0.0,
+            heightBudgetAlpha = 0.0,
+            fillAlpha = 0.0,
         )
 
-        val augmentor = DefaultRowCostAugmentor()
         fun penFor(length: Int) = augmentor.totalPenalty(
             RowPenaltyContext(
                 length = length,
                 isLastRow = false,
-                plannedHeight = 100f, heightHint = null,
-                rowIndex = 0, rowsLeftAfterThis = 1, hCount = 0, vCount = 0,
-                currentMostlyV = false, planBoxes = emptyList(), collageWidth = 360f, verticalGap = 6f,
-                nextRowFirstHeight = null, nextMostlyV = false, tailTotalHeight = 0f,
-                contrastTau = CollageTuning.current.dynamicProgrammingConfig.contrastTau,
-                rowContrastAlpha = 0.0, rowWidthBalanceAlpha = 0.0,
-                verticalSquashGuardFracOfWidth = CollageTuning.current.augmentor.verticalSquashGuardFracOfWidth,
-                verticalSquashAlpha = 0.0, rowHeightSmoothAlpha = 0.0, heightBudgetAlpha = 0.0,
-                maxHeightAllowed = Float.POSITIVE_INFINITY, areaUnit = ((360f * 56f).toDouble()),
-                rowLenPrior = RowLengthPriority(), nextHeightHint = null,
+                plannedHeight = 100f,
+                heightHint = null,
+                rowIndex = 0,
+                rowsLeftAfterThis = 1,
+                hCount = 0,
+                vCount = 0,
+                currentMostlyV = false,
+                planBoxes = emptyList(),
+                collageWidth = 360f,
+                verticalGap = 6f,
+                nextRowFirstHeight = null,
+                nextMostlyV = false,
+                tailTotalHeight = 0f,
+                contrastTau = CollageTuning.default.dynamicProgrammingConfig.contrastTau,
+                rowContrastAlpha = 0.0,
+                rowWidthBalanceAlpha = 0.0,
+                verticalSquashGuardFracOfWidth =
+                    CollageTuning.default.augmentor.verticalSquashGuardFracOfWidth,
+                verticalSquashAlpha = 0.0,
+                rowHeightSmoothAlpha = 0.0,
+                heightBudgetAlpha = 0.0,
+                maxHeightAllowed = Float.POSITIVE_INFINITY,
+                areaUnit = (360f * 56f).toDouble(),
+                rowLenPrior = RowLengthPriority(),
+                nextHeightHint = null,
                 itemsLeftAfterThis = 6 - length,
-                totalItems = 4,
+                totalItems = 6,
             )
         )
 
-        val p3 = penFor(3)
-        val p2 = penFor(2)
-        assertTrue(p3 < p2, "3+3 должно быть дешевле 2+4 с включённым бонусом; p3=$p3 p2=$p2")
+        val penaltyForThreePlusThree = penFor(3)
+        val penaltyForTwoPlusFour = penFor(2)
 
-        CollageTuning.current = cfg
+        assertTrue(
+            penaltyForThreePlusThree < penaltyForTwoPlusFour,
+            "3+3 should be cheaper than 2+4 when row-length uniform bonus is enabled; " +
+                    "p3=$penaltyForThreePlusThree p2=$penaltyForTwoPlusFour"
+        )
     }
 
     @Test
     fun bonus_equal_heights_prefers_similar_neighbor_rows() {
-        val cfg = CollageTuning.current
-        CollageTuning.current = cfg.copy(
-            augmentor = cfg.augmentor.copy(
-                bonusAlpha = 1.0, allowNegativeTotalPenalty = true,
-                bonusEqualHeightsAlpha = 1_200.0, bonusEqualHeightsTolFrac = 0.10,
-                rowHeightSmoothAlpha = 0.0
-            )
+        val augmentor = DefaultRowCostAugmentor(
+            bonusAlpha = 1.0,
+            allowNegativeTotalPenalty = true,
+            bonusEqualHeightsAlpha = 1_200.0,
+            bonusEqualHeightsTolFrac = 0.10,
+            rowHeightSmoothAlpha = 0.0,
         )
-        val augmentor = DefaultRowCostAugmentor()
 
-        fun pen(hNow: Float, hNext: Float) = augmentor.totalPenalty(
+        fun pen(currentHeight: Float, nextHeight: Float) = augmentor.totalPenalty(
             RowPenaltyContext(
-                length = 3, isLastRow = false,
-                plannedHeight = hNow, heightHint = null,
-                rowIndex = 0, rowsLeftAfterThis = 1, hCount = 0, vCount = 0,
-                currentMostlyV = false, planBoxes = emptyList(), collageWidth = 360f, verticalGap = 6f,
-                nextRowFirstHeight = hNext, nextMostlyV = false, tailTotalHeight = 0f,
-                contrastTau = CollageTuning.current.dynamicProgrammingConfig.contrastTau,
-                rowContrastAlpha = 0.0, rowWidthBalanceAlpha = 0.0,
-                verticalSquashGuardFracOfWidth = CollageTuning.current.augmentor.verticalSquashGuardFracOfWidth,
-                verticalSquashAlpha = 0.0, rowHeightSmoothAlpha = 0.0, heightBudgetAlpha = 0.0,
-                maxHeightAllowed = Float.POSITIVE_INFINITY, areaUnit = ((360f * 56f).toDouble()),
-                rowLenPrior = RowLengthPriority(), nextHeightHint = null,
+                length = 3,
+                isLastRow = false,
+                plannedHeight = currentHeight,
+                heightHint = null,
+                rowIndex = 0,
+                rowsLeftAfterThis = 1,
+                hCount = 0,
+                vCount = 0,
+                currentMostlyV = false,
+                planBoxes = emptyList(),
+                collageWidth = 360f,
+                verticalGap = 6f,
+                nextRowFirstHeight = nextHeight,
+                nextMostlyV = false,
+                tailTotalHeight = 0f,
+                contrastTau = CollageTuning.default.dynamicProgrammingConfig.contrastTau,
+                rowContrastAlpha = 0.0,
+                rowWidthBalanceAlpha = 0.0,
+                verticalSquashGuardFracOfWidth =
+                    CollageTuning.default.augmentor.verticalSquashGuardFracOfWidth,
+                verticalSquashAlpha = 0.0,
+                rowHeightSmoothAlpha = 0.0,
+                heightBudgetAlpha = 0.0,
+                maxHeightAllowed = Float.POSITIVE_INFINITY,
+                areaUnit = (360f * 56f).toDouble(),
+                rowLenPrior = RowLengthPriority(),
+                nextHeightHint = null,
                 itemsLeftAfterThis = 3,
-                totalItems = 4,
+                totalItems = 6,
             )
         )
 
-        val pEqual = pen(120f, 120f)
-        val pDiff = pen(120f, 150f)
-        assertTrue(pEqual < pDiff, "Равные высоты должны быть дешевле: equal=$pEqual vs diff=$pDiff")
+        val equalPenalty = pen(120f, 120f)
+        val differentPenalty = pen(120f, 150f)
 
-        CollageTuning.current = cfg
+        assertTrue(
+            equalPenalty < differentPenalty,
+            "Similar row heights should be cheaper: equal=$equalPenalty vs diff=$differentPenalty"
+        )
     }
 }

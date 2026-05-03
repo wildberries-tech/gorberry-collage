@@ -1,7 +1,7 @@
 package ru.wildberries.collage
 
-import ru.wildberries.collage.api.EngineConfig
 import ru.wildberries.collage.core.CollageTuning
+import ru.wildberries.collage.core.EngineConfig
 import ru.wildberries.collage.core.MathUtil
 import ru.wildberries.collage.model.Photo
 import ru.wildberries.collage.model.SizeAttrs
@@ -34,9 +34,9 @@ class RowPlannerHeuristicsTest {
         val target = geom.width - cfg.paddings * max(0, n - 1)
         val cell = if (n > 0) target / n else 1f
 
-        val heur = CollageTuning.current.heuristics
-        val plan = CollageTuning.current.planner
-        val tauH = CollageTuning.current.dynamicProgrammingConfig.tauHorizontal
+        val heur = CollageTuning.default.heuristics
+        val plan = CollageTuning.default.planner
+        val tauH = CollageTuning.default.dynamicProgrammingConfig.tauHorizontal
         val beta = heur.snapBeta(n)
 
         row.tiles.forEachIndexed { i, t ->
@@ -73,7 +73,7 @@ class RowPlannerHeuristicsTest {
             val ws = row.tiles.map { it.boxW }
             val mean = ws.average().toFloat().coerceAtLeast(1e-3f)
             val minW = ws.minOrNull() ?: mean
-            val gamma = CollageTuning.current.planner.matchstickGamma(3)
+            val gamma = CollageTuning.default.planner.matchstickGamma(3)
             val ratio = minW / mean
             assertTrue(ratio + 1e-4f >= gamma, "min/mean=$ratio < gamma=$gamma")
         }
@@ -101,7 +101,7 @@ class RowPlannerHeuristicsTest {
             val row = g.rows.first()
             if (row.tiles.size == 3) {
                 val target = g.width - cfg.paddings * 2
-                val thr = CollageTuning.current.heuristics.hardAbsMinFrac(3) * target
+                val thr = CollageTuning.default.heuristics.hardAbsMinFrac(3) * target
                 val minW = row.tiles.minOf { it.boxW }
                 assertTrue(minW + 1e-3f >= thr, "n=3 minW=$minW < thr=$thr")
             }
@@ -125,7 +125,7 @@ class RowPlannerHeuristicsTest {
         val g = eng.arrangeWithGeometry(photos)
         val row = g.rows.firstOrNull { it.tiles.size == 4 } ?: return
         val target = g.width - cfg.paddings * 3
-        val thr = CollageTuning.current.heuristics.hardAbsMinFrac(4) * target
+        val thr = CollageTuning.default.heuristics.hardAbsMinFrac(4) * target
         val minW = row.tiles.minOf { it.boxW }
         assertTrue(minW + 1e-3f >= thr, "n=4 minW=$minW < thr=$thr")
     }

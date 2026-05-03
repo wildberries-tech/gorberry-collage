@@ -1,6 +1,5 @@
 package ru.wildberries.collage.core
 
-import ru.wildberries.collage.api.Logger
 import ru.wildberries.collage.cache.PlanCache
 import ru.wildberries.collage.model.Photo
 import ru.wildberries.collage.model.RectF
@@ -90,7 +89,7 @@ internal class DynamicProgrammingRowSolver(
     private val planner: RowPlanner,
     private val planCache: PlanCache,
     private val logger: Logger,
-    private val tuning: CollageTuning.Snapshot = CollageTuning.current,
+    private val tuning: CollageTuning.Snapshot = CollageTuning.default,
 ) {
 
     private val tauVertical: Float = 1f / params.tauHorizontal

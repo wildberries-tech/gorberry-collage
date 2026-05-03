@@ -1,6 +1,5 @@
 package ru.wildberries.collage.core
 
-import ru.wildberries.collage.api.EngineConfig
 import ru.wildberries.collage.model.Photo
 import kotlin.math.max
 import kotlin.math.min

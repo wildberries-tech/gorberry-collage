@@ -1,7 +1,7 @@
 package ru.wildberries.collage
 
-import ru.wildberries.collage.api.EngineConfig
 import ru.wildberries.collage.core.CollageTuning
+import ru.wildberries.collage.core.EngineConfig
 import ru.wildberries.collage.core.MathUtil
 import ru.wildberries.collage.model.CollageGeometry
 import ru.wildberries.collage.model.Photo
@@ -10,11 +10,31 @@ import ru.wildberries.collage.model.SizeAttrs
 import ru.wildberries.collage.strategy.TileFit
 import kotlin.math.abs
 import kotlin.math.max
+import kotlin.math.pow
+import kotlin.math.round
 import kotlin.test.DefaultAsserter.assertTrue
 import kotlin.test.Test
 
-private fun fmt(x: Number, digits: Int = 1): String =
-    "%.${digits}f".format(x.toDouble())
+private fun fmt(value: Number, digits: Int = 1): String {
+    require(digits >= 0) { "digits must be >= 0" }
+
+    val factor = 10.0.pow(digits)
+    val roundedValue = round(value.toDouble() * factor) / factor
+    val normalizedValue = if (abs(roundedValue) < 1e-12) 0.0 else roundedValue
+    val text = normalizedValue.toString()
+
+    if (digits == 0) {
+        return text.substringBefore('.')
+    }
+
+    val parts = text.split('.', limit = 2)
+    val integerPart = parts[0]
+    val fractionPart = parts.getOrElse(1) { "" }
+        .padEnd(digits, '0')
+        .take(digits)
+
+    return "$integerPart.$fractionPart"
+}
 
 private data class CaseCfg(val tag: String, val photos: List<Photo>)
 
@@ -93,7 +113,7 @@ private fun rowVerticalSquashError(
         MathUtil.aspect(p.width, p.height) <= tauV
     }
     if (vCnt * 2 >= n) {
-        val guardH = CollageTuning.current.dynamicProgrammingConfig.verticalSquashGuardFracOfWidth * width
+        val guardH = CollageTuning.default.dynamicProgrammingConfig.verticalSquashGuardFracOfWidth * width
         if (row.height + 1e-3f < guardH) {
             return "row#$rowIdx: vertical-squash h=${fmt(row.height)} < guard=${fmt(guardH)}"
         }
@@ -131,9 +151,9 @@ private fun checkGeometry(
     val minItemWidth = cfg.minItemWidth
     val photoById = case.photos.associateBy { it.imageId }
 
-    val tauH = CollageTuning.current.dynamicProgrammingConfig.tauHorizontal
+    val tauH = CollageTuning.default.dynamicProgrammingConfig.tauHorizontal
     val tauV = 1f / tauH
-    val heur = CollageTuning.current.heuristics
+    val heur = CollageTuning.default.heuristics
 
     geom.rows.forEachIndexed { rowIdx, row ->
         rowWidthFillDriftError(rowIdx, row, width, paddings)?.let { errs += it }

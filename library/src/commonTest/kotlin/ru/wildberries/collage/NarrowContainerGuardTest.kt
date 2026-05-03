@@ -1,7 +1,7 @@
 package ru.wildberries.collage
 
-import ru.wildberries.collage.api.EngineConfig
 import ru.wildberries.collage.core.CollageTuning
+import ru.wildberries.collage.core.EngineConfig
 import ru.wildberries.collage.model.Photo
 import ru.wildberries.collage.model.SizeAttrs
 import ru.wildberries.collage.strategy.FitWeights
@@ -35,7 +35,7 @@ class NarrowContainerGuardTest {
             Photo(1, 1000f, 5000f)
         )
         val geom = eng.arrangeWithGeometry(photos)
-        val heur = CollageTuning.current.heuristics
+        val heur = CollageTuning.default.heuristics
 
         geom.rows.forEach { row ->
             row.tiles.forEach { t ->

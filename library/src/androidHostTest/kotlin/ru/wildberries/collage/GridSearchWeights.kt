@@ -1,7 +1,6 @@
 package ru.wildberries.collage
 
-import ru.wildberries.collage.api.CollageEngine
-import ru.wildberries.collage.api.EngineConfig
+import ru.wildberries.collage.core.EngineConfig
 import ru.wildberries.collage.core.MathUtil
 import ru.wildberries.collage.model.Photo
 import ru.wildberries.collage.model.RectF
@@ -351,7 +350,7 @@ class GridSearchWeights {
     }
 
     private fun evalOne(
-        eng: CollageEngine,
+        eng: TestLayoutEngine,
         photos: List<Photo>,
         targetW: Float,
         targetH: Float,
@@ -465,7 +464,7 @@ class GridSearchWeights {
             10.0 * max(0, m.rows - 6)
 
     private fun evalAll(
-        eng: CollageEngine,
+        eng: TestLayoutEngine,
         scenes: List<Pair<String, List<Photo>>>,
         targetW: Float,
         targetH: Float,

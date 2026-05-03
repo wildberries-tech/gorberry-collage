@@ -15,7 +15,7 @@ import kotlin.math.max
  */
 internal class DefaultTileScorer(
     private val weights: FitWeights = FitWeights(),
-    private val lut: PowerLookupTable = CollageTuning.current.resources.powerLookupTable,
+    private val lut: PowerLookupTable = CollageTuning.default.resources.powerLookupTable,
 ) : TileScorer {
 
     private fun aspectSafe(width: Float, height: Float): Float = MathUtil.aspect(width, height)

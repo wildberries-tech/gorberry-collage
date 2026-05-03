@@ -2,7 +2,7 @@ package ru.wildberries.collage.strategy
 
 import ru.wildberries.collage.model.RectF
 
-data class RowLengthPriority(
+internal data class RowLengthPriority(
     val enabled: Boolean = false,
     val w1: Double = +0.03,
     val w2: Double = -0.002,

@@ -33,7 +33,7 @@ class DpUsesCachedRowLossTest {
             maxHorizontalsPerRow = 3,
             minItemWidth = 56f,
             minItemHeight = 56f,
-            tauHorizontal = CollageTuning.current.dynamicProgrammingConfig.tauHorizontal
+            tauHorizontal = CollageTuning.default.dynamicProgrammingConfig.tauHorizontal
         )
 
         val planCache = PlanCache()
@@ -51,7 +51,7 @@ class DpUsesCachedRowLossTest {
             logger = TestLogger(),
         )
 
-        val hQ = MathUtil.fastRoundToInt(h / CollageTuning.current.dynamicProgrammingConfig.heightQuantStep)
+        val hQ = MathUtil.fastRoundToInt(h / CollageTuning.default.dynamicProgrammingConfig.heightQuantStep)
         val boxes = listOf(
             RectF(x = 0f, y = 0f, w = 100f, h = h),
             RectF(x = 106f, y = 0f, w = 100f, h = h),

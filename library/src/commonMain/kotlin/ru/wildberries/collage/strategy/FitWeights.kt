@@ -18,7 +18,7 @@ package ru.wildberries.collage.strategy
  * - All default parameters was test by visual control for COVER/CONTAIN
  * - Work with LUT in DefaultTileScorer
  */
-data class FitWeights(
+internal data class FitWeights(
     val lambdaCrop: Float = 2.8f,
     val lambdaGap: Float = 0.08f,
 

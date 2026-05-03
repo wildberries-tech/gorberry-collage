@@ -28,9 +28,9 @@ internal data class RowLayoutContext(
 /**
  * Planner for a single row, uses CollageTuning for thresholds and floors
  */
-internal class RowPlanner {
-
-    private val tuning = CollageTuning.current
+internal class RowPlanner(
+    private val tuning: CollageTuning.Snapshot = CollageTuning.default,
+) {
     private val tauH = tuning.dynamicProgrammingConfig.tauHorizontal
     private val planningAspectLimit = tuning.heuristics.planningAspectLimit
     private val freeCropAspectLimit = tuning.heuristics.freeCropAspectLimit
