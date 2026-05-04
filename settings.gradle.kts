@@ -13,5 +13,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "vanberry-collage"
-include(":library")
+rootProject.name = "gorberry-collage"
+include(":collage")
