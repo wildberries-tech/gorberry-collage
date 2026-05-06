@@ -233,7 +233,7 @@ private fun DemoWidthVariantMessage(
                     val minHeightPx = with(density) { demoCase.minHeight.toPx() }
                     val maxHeightPx = demoCase.maxHeight?.let { maxHeight ->
                         with(density) { maxHeight.toPx() }
-                    } ?: Float.POSITIVE_INFINITY
+                    } ?: defaultMessageMaxHeightPx(widthPx, density)
 
                     val layout = remember(
                         engine,
@@ -283,6 +283,19 @@ private fun DemoWidthVariantMessage(
                 }
             }
         }
+    }
+}
+
+private fun defaultMessageMaxHeightPx(
+    widthPx: Float,
+    density: androidx.compose.ui.unit.Density,
+): Float {
+    return with(density) {
+        (widthPx * 1.35f)
+            .coerceIn(
+                minimumValue = 220.dp.toPx(),
+                maximumValue = 520.dp.toPx(),
+            )
     }
 }
 
