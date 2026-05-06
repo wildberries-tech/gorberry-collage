@@ -11,3 +11,13 @@ xcuserdata
 .kotlin
 #So we don't accidentally commit our private keys
 *.gpg
+
+.gradle/
+build/
+*/build/
+
+DerivedData/
+xcuserdata/
+*.xcuserstate
+*.xcworkspace/xcuserdata/
+*.xcodeproj/xcuserdata/

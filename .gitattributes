@@ -1,0 +1,12 @@
+* text=auto
+
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.webp binary
+
+*.kt text eol=lf
+*.kts text eol=lf
+*.toml text eol=lf
+*.swift text eol=lf
+*.pbxproj text eol=lf
