@@ -5,8 +5,9 @@ import ru.wildberries.collage.cache.RowPlanCache
 import ru.wildberries.collage.model.CollageLayout
 import ru.wildberries.collage.model.CollageImage
 import ru.wildberries.collage.model.RectF
-import ru.wildberries.collage.model.RowGeometry
-import ru.wildberries.collage.model.TileGeometry
+import ru.wildberries.collage.model.CollageRow
+import ru.wildberries.collage.model.CollageTile
+import ru.wildberries.collage.model.TileFitPolicy
 import ru.wildberries.collage.strategy.RowPenaltyModel
 import kotlin.math.max
 import kotlin.math.min
@@ -29,7 +30,7 @@ internal class CollageCore(
 ) {
 
     private data class RowBuildResult(
-        val rows: List<RowGeometry>,
+        val rows: List<CollageRow>,
         val nextY: Float,
     )
 
@@ -86,17 +87,23 @@ internal class CollageCore(
             "Collage",
             "arrangeWithGeometry: n=1 width=$width rows=1 totalH=$h timeNs=$dt"
         )
-        return CollageLayout(width, h, listOf(RowGeometry(0f, h, listOf(tile))))
+        return CollageLayout(width, h, listOf(CollageRow(0f, h, listOf(tile))))
     }
 
     fun arrangeWithGeometry(collageImages: List<CollageImage>): CollageLayout {
         rowPlanCache.clear()
         lossCache.clear()
 
-        if (collageImages.isEmpty()) return CollageLayout(0f, 0f, emptyList())
-
         val startTimeNs = clock.nowNs()
         val (targetWidth, minHeightAllowed, maxHeightAllowedRaw) = resolveWidthAndHeightLimits()
+
+        if (collageImages.isEmpty()) {
+            return CollageLayout(
+                width = targetWidth,
+                height = 0f,
+                rows = emptyList(),
+            )
+        }
 
         val maximumHeightForPlanning = if (config.ignoreMaxHeight) {
             Float.POSITIVE_INFINITY
@@ -208,7 +215,7 @@ internal class CollageCore(
         chosen: RowLayoutSolution,
         minHeightAllowed: Float,
         maximumHeightForPlanning: Float,
-    ): List<RowGeometry> {
+    ): List<CollageRow> {
         val finalPlans = solvedRowPlanRefiner.buildFinalPlans(
             SolvedRowPlanRefinementInput(
                 collageImages = collageImages,
@@ -238,7 +245,7 @@ internal class CollageCore(
         verticalGap: Float,
         best: RowLayoutSolution?,
         effectiveMaximumItemsPerRow: Int,
-    ): List<RowGeometry> {
+    ): List<CollageRow> {
         val (ranges, heights) = resolveRangesAndHeights(
             best = best,
             n = collageImages.size,
@@ -285,6 +292,7 @@ internal class CollageCore(
             minItemHeight = config.minItemHeight,
             rowHeightHint = heightHint,
             tileFitScorer = scorer,
+            tileFitPolicy = config.tileFitPolicy,
         )
 
         val rowPlan = planner.tryPlan(context) ?: return null
@@ -326,12 +334,13 @@ internal class CollageCore(
             val box = boxes[tileIndex]
             val rawDecision = scorer.decide(photo, box)
 
-            val shouldForceContain = tuning.heuristics
-                .shouldForceContainInNarrowContainerForMaterialization(
-                    layoutWidthPx = collageWidth,
-                    imageAspect = MathUtil.aspect(photo.width, photo.height),
-                    cropRatio = rawDecision.crop,
-                )
+            val shouldForceContain =
+                config.tileFitPolicy == TileFitPolicy.Auto &&
+                        tuning.heuristics.shouldForceContainInNarrowContainerForMaterialization(
+                            layoutWidthPx = collageWidth,
+                            imageAspect = MathUtil.aspect(photo.width, photo.height),
+                            cropRatio = rawDecision.crop,
+                        )
 
             val useCover = rawDecision.useCover && !shouldForceContain
             accumulatedLoss += if (useCover) rawDecision.cover else rawDecision.contain
@@ -347,16 +356,16 @@ internal class CollageCore(
         verticalGap: Float,
         ranges: List<IntRange>,
         rowBoxes: List<List<RectF>>,
-    ): List<RowGeometry> {
+    ): List<CollageRow> {
         var cursorY = 0f
-        val out = ArrayList<RowGeometry>(ranges.size)
+        val out = ArrayList<CollageRow>(ranges.size)
 
         for (idx in ranges.indices) {
             val range = ranges[idx]
             val segment = collageImages.subList(range.first, range.last + 1)
             val boxes = rowBoxes[idx]
 
-            val tiles = ArrayList<TileGeometry>(boxes.size)
+            val tiles = ArrayList<CollageTile>(boxes.size)
             var rowHeight = 0f
 
             var k = 0
@@ -373,7 +382,7 @@ internal class CollageCore(
                 k++
             }
 
-            out += RowGeometry(cursorY, rowHeight, tiles)
+            out += CollageRow(cursorY, rowHeight, tiles)
             cursorY += rowHeight + verticalGap
         }
 
@@ -402,7 +411,8 @@ internal class CollageCore(
             planner = planner,
             rowPlanCache = rowPlanCache,
             logger = logger,
-            tuning = tuning
+            tuning = tuning,
+            tileFitPolicy = config.tileFitPolicy,
         )
     }
 
@@ -432,9 +442,9 @@ internal class CollageCore(
         verticalGap: Float,
         ranges: List<IntRange>,
         rowHeights: List<Float>,
-    ): List<RowGeometry> {
+    ): List<CollageRow> {
         var cursorY = 0f
-        val rows = ArrayList<RowGeometry>()
+        val rows = ArrayList<CollageRow>()
 
         for (idx in ranges.indices) {
             val result = materializeRangeWithFallback(
@@ -487,12 +497,13 @@ internal class CollageCore(
             minItemHeight = config.minItemHeight,
             rowHeightHint = height,
             tileFitScorer = scorer,
+            tileFitPolicy = config.tileFitPolicy,
         )
 
         val plan = planner.tryPlan(context)
 
         if (plan != null) {
-            val tiles = ArrayList<TileGeometry>(plan.boxes.size)
+            val tiles = ArrayList<CollageTile>(plan.boxes.size)
             var tileIndex = 0
 
             while (tileIndex < plan.boxes.size) {
@@ -507,7 +518,7 @@ internal class CollageCore(
                 tileIndex++
             }
 
-            val row = RowGeometry(
+            val row = CollageRow(
                 y = cursorY,
                 height = plan.rowHeight,
                 tiles = tiles,
@@ -543,7 +554,7 @@ internal class CollageCore(
         )
 
         val tile = materializeTile(collageImage, box)
-        val row = RowGeometry(
+        val row = CollageRow(
             y = cursorY,
             height = rowHeight,
             tiles = listOf(tile),
@@ -563,7 +574,7 @@ internal class CollageCore(
         cursorY: Float,
     ): RowBuildResult {
         var nextY = cursorY
-        val rows = ArrayList<RowGeometry>(range.last - range.first + 1)
+        val rows = ArrayList<CollageRow>(range.last - range.first + 1)
 
         var photoIndex = range.first
         while (photoIndex <= range.last) {
@@ -584,7 +595,7 @@ internal class CollageCore(
             )
 
             val tile = materializeTile(photo, box)
-            rows += RowGeometry(
+            rows += CollageRow(
                 y = nextY,
                 height = clampedRowHeight,
                 tiles = listOf(tile),
@@ -605,7 +616,7 @@ internal class CollageCore(
         return min(config.maxItemsPerRow, capByWidth)
     }
 
-    private fun materializeTile(collageImage: CollageImage, absBox: RectF): TileGeometry {
+    private fun materializeTile(collageImage: CollageImage, absBox: RectF): CollageTile {
         val decision = decideWithCache(collageImage, absBox)
         return renderer.materialize(collageImage, absBox, decision)
     }
@@ -638,6 +649,10 @@ internal class CollageCore(
         collageImage: CollageImage,
         decision: TileLossDecision,
     ): TileLossDecision {
+        if (config.tileFitPolicy == TileFitPolicy.CoverOnly) {
+            return decision.copy(useCover = true)
+        }
+
         val shouldForceContain = tuning.heuristics
             .shouldForceContainInNarrowContainerForMaterialization(
                 layoutWidthPx = currentLayoutWidth,

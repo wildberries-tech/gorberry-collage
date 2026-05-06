@@ -5,7 +5,7 @@ import ru.wildberries.collage.core.EngineConfig
 import ru.wildberries.collage.core.MathUtil
 import ru.wildberries.collage.model.CollageLayout
 import ru.wildberries.collage.model.CollageImage
-import ru.wildberries.collage.model.RowGeometry
+import ru.wildberries.collage.model.CollageRow
 import ru.wildberries.collage.model.SizeAttrs
 import ru.wildberries.collage.strategy.TileFit
 import kotlin.math.abs
@@ -49,7 +49,7 @@ private fun totalHeightError(geom: CollageLayout): String? {
 
 private fun rowWidthFillDriftError(
     rowIdx: Int,
-    row: RowGeometry,
+    row: CollageRow,
     width: Float,
     paddings: Float,
 ): String? {
@@ -66,7 +66,7 @@ private fun rowWidthFillDriftError(
 
 private fun rowSpikeAndMinWidthErrors(
     rowIdx: Int,
-    row: RowGeometry,
+    row: CollageRow,
     width: Float,
     paddings: Float,
     minItemWidth: Float,
@@ -101,7 +101,7 @@ private fun rowSpikeAndMinWidthErrors(
 
 private fun rowVerticalSquashError(
     rowIdx: Int,
-    row: RowGeometry,
+    row: CollageRow,
     width: Float,
     tauV: Float,
     collageImageById: Map<Int, CollageImage>,
@@ -123,7 +123,7 @@ private fun rowVerticalSquashError(
 
 private fun rowWorstCropError(
     rowIdx: Int,
-    row: RowGeometry,
+    row: CollageRow,
 ): String? {
     var worstCrop = 0.0
     row.tiles.forEach { t ->

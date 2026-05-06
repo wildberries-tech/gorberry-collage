@@ -11,6 +11,7 @@ import ru.wildberries.collage.core.RowPlanner
 import ru.wildberries.collage.model.CollageLayout
 import ru.wildberries.collage.model.CollageImage
 import ru.wildberries.collage.model.SizeAttrs
+import ru.wildberries.collage.model.TileFitPolicy
 import ru.wildberries.collage.strategy.DefaultRowPenaltyModel
 import ru.wildberries.collage.strategy.DefaultTileGeometryMapper
 import ru.wildberries.collage.strategy.DefaultTileFitScorer
@@ -140,12 +141,14 @@ class CollageEngine {
             ),
             rowsSearchSpan = configuration.rowSearchRadius,
             ignoreMaxHeight = configuration.allowHeightOverflow,
+            tileFitPolicy = configuration.tileFitPolicy,
         )
 
         return CollageCore(
             scorer = DefaultTileFitScorer(
                 weights = TileFitScoringWeights.Default,
                 lut = tuning.resources.powerLookupTable,
+                fitPolicy = configuration.tileFitPolicy,
             ),
             renderer = DefaultTileGeometryMapper(),
             rowAugmentor = DefaultRowPenaltyModel(),
@@ -207,6 +210,14 @@ class CollageEngine {
         var allowHeightOverflow: Boolean = false
 
         /**
+         * Controls how image content is fitted inside each tile.
+         *
+         * Auto chooses between COVER and CONTAIN.
+         * CoverOnly always uses COVER and skips CONTAIN loss calculation.
+         */
+        var tileFitPolicy: TileFitPolicy = TileFitPolicy.CoverOnly
+
+        /**
          * Sets default layout bounds for [CollageEngine.layout].
          *
          * Use this when one engine is tied to a fixed UI container.
@@ -245,6 +256,7 @@ class CollageEngine {
                 maxLandscapeTilesPerRow = maxLandscapeTilesPerRow,
                 rowSearchRadius = searchQuality.rowSearchRadius,
                 allowHeightOverflow = allowHeightOverflow,
+                tileFitPolicy = tileFitPolicy,
                 defaultLayoutRequest = defaultLayoutRequest,
             )
         }
@@ -278,6 +290,7 @@ internal data class ConfigurationSnapshot(
     val maxLandscapeTilesPerRow: Int,
     val rowSearchRadius: Int,
     val allowHeightOverflow: Boolean,
+    val tileFitPolicy: TileFitPolicy,
     val defaultLayoutRequest: LayoutRequest?,
 )
 

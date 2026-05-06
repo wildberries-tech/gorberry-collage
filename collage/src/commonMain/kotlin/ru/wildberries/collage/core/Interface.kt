@@ -2,7 +2,7 @@ package ru.wildberries.collage.core
 
 import ru.wildberries.collage.model.CollageImage
 import ru.wildberries.collage.model.RectF
-import ru.wildberries.collage.model.TileGeometry
+import ru.wildberries.collage.model.CollageTile
 
 internal data class TileLossDecision(val cover: Float, val contain: Float, val crop: Float, val useCover: Boolean)
 
@@ -13,5 +13,5 @@ internal interface TileFitScorer {
 
 internal interface TileGeometryMapper {
 
-    fun materialize(collageImage: CollageImage, box: RectF, decision: TileLossDecision): TileGeometry
+    fun materialize(collageImage: CollageImage, box: RectF, decision: TileLossDecision): CollageTile
 }

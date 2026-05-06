@@ -3,6 +3,7 @@ package ru.wildberries.collage.core
 import ru.wildberries.collage.cache.RowPlanCache
 import ru.wildberries.collage.model.CollageImage
 import ru.wildberries.collage.model.RectF
+import ru.wildberries.collage.model.TileFitPolicy
 import ru.wildberries.collage.strategy.RowPenaltyModel
 import ru.wildberries.collage.strategy.RowLengthBias
 import ru.wildberries.collage.strategy.RowPenaltyContext
@@ -92,6 +93,7 @@ internal class DynamicProgrammingRowSplitSolver(
     private val rowPlanCache: RowPlanCache,
     private val logger: Logger,
     private val tuning: CollageTuning.Snapshot = CollageTuning.default,
+    private val tileFitPolicy: TileFitPolicy = TileFitPolicy.CoverOnly,
 ) {
 
     private val tauVertical: Float = 1f / params.tauHorizontal
@@ -386,7 +388,8 @@ internal class DynamicProgrammingRowSplitSolver(
             minItemWidth = params.minItemWidth,
             minItemHeight = params.minItemHeight,
             rowHeightHint = heightHint,
-            tileFitScorer = tileFitScorer
+            tileFitScorer = tileFitScorer,
+            tileFitPolicy = tileFitPolicy,
         )
         val rp = planner.tryPlan(ctx) ?: return null
         val slot = rowPlanCache.put(

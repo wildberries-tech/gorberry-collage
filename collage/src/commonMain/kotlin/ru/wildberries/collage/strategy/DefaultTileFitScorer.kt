@@ -8,6 +8,7 @@ import ru.wildberries.collage.core.MathUtil.PowerLookupTable
 import ru.wildberries.collage.core.TileFitScorer
 import ru.wildberries.collage.model.CollageImage
 import ru.wildberries.collage.model.RectF
+import ru.wildberries.collage.model.TileFitPolicy
 import kotlin.math.max
 
 /**
@@ -16,6 +17,7 @@ import kotlin.math.max
 internal class DefaultTileFitScorer(
     private val weights: TileFitScoringWeights = TileFitScoringWeights(),
     private val lut: PowerLookupTable = CollageTuning.default.resources.powerLookupTable,
+    private val fitPolicy: TileFitPolicy = TileFitPolicy.CoverOnly,
 ) : TileFitScorer {
 
     private fun aspectSafe(width: Float, height: Float): Float = MathUtil.aspect(width, height)
@@ -28,7 +30,6 @@ internal class DefaultTileFitScorer(
 
     override fun decide(collageImage: CollageImage, box: RectF): TileLossDecision {
         val rawCropRatio = TileFitLossModel.coverCropRatio(collageImage, box).coerceIn(0f, 1f)
-        val gapRatio = TileFitLossModel.containGapRatio(collageImage, box).coerceIn(0f, 1f)
         val boxArea = (box.w * box.h).coerceAtLeast(1f)
 
         val imageAspectRatio = aspectSafe(collageImage.width, collageImage.height)
@@ -48,35 +49,44 @@ internal class DefaultTileFitScorer(
         )
 
         val effectiveCropPow = (
-            weights.cropPow +
-                weights.mismatchAmplify * mismatch
-            ).coerceIn(1.0f, 3.5f)
+                weights.cropPow +
+                        weights.mismatchAmplify * mismatch
+                ).coerceIn(1.0f, 3.5f)
 
-        val coverBase = weights.lambdaCrop *
-            boxArea *
-            lut.power(
-                valueInput = cropRatio,
-                exponentInput = effectiveCropPow,
-            )
-
-        val containBase = weights.lambdaGap *
-            boxArea *
-            lut.power(
-                valueInput = gapRatio,
-                exponentInput = weights.gapPow,
-            )
-
-        var coverTotal = coverBase
+        var coverTotal = weights.lambdaCrop *
+                boxArea *
+                lut.power(
+                    valueInput = cropRatio,
+                    exponentInput = effectiveCropPow,
+                )
 
         if (cropRatio > weights.extremeCropHard) {
             val over = cropRatio - weights.extremeCropHard
             coverTotal += weights.lambdaCrop *
-                boxArea *
-                weights.extremeCropAlpha *
-                over *
-                over *
-                (1f + mismatch)
+                    boxArea *
+                    weights.extremeCropAlpha *
+                    over *
+                    over *
+                    (1f + mismatch)
         }
+
+        if (fitPolicy == TileFitPolicy.CoverOnly) {
+            return TileLossDecision(
+                cover = coverTotal,
+                contain = coverTotal,
+                crop = cropRatio,
+                useCover = true,
+            )
+        }
+
+        val gapRatio = TileFitLossModel.containGapRatio(collageImage, box).coerceIn(0f, 1f)
+
+        val containBase = weights.lambdaGap *
+                boxArea *
+                lut.power(
+                    valueInput = gapRatio,
+                    exponentInput = weights.gapPow,
+                )
 
         val preferContainGuard = 0.001f
         var useCover = coverTotal < containBase * (1f - preferContainGuard)

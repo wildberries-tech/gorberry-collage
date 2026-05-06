@@ -4,7 +4,7 @@ import ru.wildberries.collage.core.TileLossDecision
 import ru.wildberries.collage.core.TileGeometryMapper
 import ru.wildberries.collage.model.CollageImage
 import ru.wildberries.collage.model.RectF
-import ru.wildberries.collage.model.TileGeometry
+import ru.wildberries.collage.model.CollageTile
 import kotlin.math.max
 import kotlin.math.min
 
@@ -16,7 +16,7 @@ import kotlin.math.min
  */
 internal class DefaultTileGeometryMapper : TileGeometryMapper {
 
-    override fun materialize(collageImage: CollageImage, box: RectF, decision: TileLossDecision): TileGeometry {
+    override fun materialize(collageImage: CollageImage, box: RectF, decision: TileLossDecision): CollageTile {
         val useCover = decision.useCover
 
         val safePhotoWidth = collageImage.width.coerceAtLeast(1f)
@@ -33,7 +33,7 @@ internal class DefaultTileGeometryMapper : TileGeometryMapper {
         val contentX = box.x + (box.w - contentW) / 2f
         val contentY = box.y + (box.h - contentH) / 2f
 
-        return TileGeometry(
+        return CollageTile(
             imageId = collageImage.imageId,
             boxX = box.x,
             boxY = box.y,

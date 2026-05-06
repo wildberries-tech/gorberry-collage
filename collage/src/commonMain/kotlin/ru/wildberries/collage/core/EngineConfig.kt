@@ -1,6 +1,7 @@
 package ru.wildberries.collage.core
 
 import ru.wildberries.collage.model.SizeAttrs
+import ru.wildberries.collage.model.TileFitPolicy
 import ru.wildberries.collage.strategy.RowLengthBias
 
 /**
@@ -19,6 +20,7 @@ internal data class EngineConfig(
     val rowLengthBias: RowLengthBias = RowLengthBias(),
     val rowsSearchSpan: Int = 2,
     val ignoreMaxHeight: Boolean = false,
+    val tileFitPolicy: TileFitPolicy = TileFitPolicy.CoverOnly,
 ) {
     init {
         require(spacing >= 0f) { "paddings must be >= 0" }

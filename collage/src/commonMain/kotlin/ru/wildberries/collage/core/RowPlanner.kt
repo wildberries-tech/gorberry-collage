@@ -3,6 +3,7 @@ package ru.wildberries.collage.core
 import ru.wildberries.collage.model.CollageImage
 import ru.wildberries.collage.model.RectF
 import ru.wildberries.collage.model.RowPlan
+import ru.wildberries.collage.model.TileFitPolicy
 import kotlin.math.max
 
 /**
@@ -19,6 +20,7 @@ internal data class RowLayoutContext(
     val minItemHeight: Float,
     val rowHeightHint: Float? = null,
     val tileFitScorer: TileFitScorer,
+    val tileFitPolicy: TileFitPolicy = TileFitPolicy.CoverOnly,
 ) {
 
     val length: Int get() = endIndexInclusive - startIndexInclusive + 1
@@ -271,16 +273,17 @@ internal class RowPlanner(
         val box = boxes[tileIndex]
         val decision = context.tileFitScorer.decide(photo, box)
 
-        val shouldForceContain = tuning.heuristics
-            .shouldForceContainInNarrowContainerForRowScoring(
-                layoutWidthPx = context.collageWidth,
-                imageAspect = MathUtil.aspect(photo.width, photo.height),
-                cropRatio = decision.crop,
-                isSmallTile = isNotLargerThanAverageTile(
-                    context = context,
-                    box = box,
-                ),
-            )
+        val shouldForceContain =
+            context.tileFitPolicy == TileFitPolicy.Auto &&
+                    tuning.heuristics.shouldForceContainInNarrowContainerForRowScoring(
+                        layoutWidthPx = context.collageWidth,
+                        imageAspect = MathUtil.aspect(photo.width, photo.height),
+                        cropRatio = decision.crop,
+                        isSmallTile = isNotLargerThanAverageTile(
+                            context = context,
+                            box = box,
+                        ),
+                    )
 
         val useCover = decision.useCover && !shouldForceContain
         return if (useCover) decision.cover else decision.contain

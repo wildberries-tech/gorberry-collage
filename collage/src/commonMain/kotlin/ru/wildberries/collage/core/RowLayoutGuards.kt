@@ -2,6 +2,7 @@ package ru.wildberries.collage.core
 
 import ru.wildberries.collage.model.CollageImage
 import ru.wildberries.collage.model.RectF
+import ru.wildberries.collage.model.TileFitPolicy
 import kotlin.math.max
 import kotlin.math.min
 
@@ -146,7 +147,7 @@ internal object RowLayoutGuards {
             val rawDecision = context.tileFitScorer.decide(photo, box)
             val useCover = resolveUseCoverForFinalPreview(
                 context = context,
-                collageImage = photo,
+                image = photo,
                 decision = rawDecision,
                 tuning = tuning,
             )
@@ -240,14 +241,18 @@ internal object RowLayoutGuards {
 
     private fun resolveUseCoverForFinalPreview(
         context: RowLayoutContext,
-        collageImage: CollageImage,
+        image: CollageImage,
         decision: TileLossDecision,
         tuning: CollageTuning.Snapshot,
     ): Boolean {
+        if (context.tileFitPolicy == TileFitPolicy.CoverOnly) {
+            return true
+        }
+
         val shouldForceContain = tuning.heuristics
             .shouldForceContainInNarrowContainerForMaterialization(
                 layoutWidthPx = context.collageWidth,
-                imageAspect = MathUtil.aspect(collageImage.width, collageImage.height),
+                imageAspect = MathUtil.aspect(image.width, image.height),
                 cropRatio = decision.crop,
             )
 
