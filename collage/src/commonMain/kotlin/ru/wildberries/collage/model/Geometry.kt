@@ -1,39 +1,60 @@
 package ru.wildberries.collage.model
 
-import ru.wildberries.collage.strategy.TileFit
+/**
+ * Internal rectangle used by the layout algorithm.
+ *
+ * Public API exposes [CollageBox] instead.
+ */
+internal data class RectF(
+    val x: Float,
+    val y: Float,
+    val w: Float,
+    val h: Float,
+)
 
-data class RectF(val x: Float, val y: Float, val w: Float, val h: Float)
+/**
+ * A rectangle in the collage coordinate system.
+ *
+ * All values use the same unit as the requested collage width.
+ */
+data class CollageBox(
+    val x: Float,
+    val y: Float,
+    val width: Float,
+    val height: Float,
+)
 
+/**
+ * A single image tile in the resulting collage.
+ *
+ * [box] is the visible tile viewport. UI code should clip image content to this box.
+ *
+ * [contentBox] is the scaled image rectangle in the same collage coordinate system.
+ * In [TileFit.COVER] mode it can be larger than [box].
+ * In [TileFit.CONTAIN] mode it fits inside [box] and may leave empty areas.
+ */
 data class CollageTile(
     val imageId: Int,
-
-    /**
-     * Visible tile bounds in the collage coordinate system.
-     *
-     * This rectangle is the clipping viewport for the image content.
-     */
-    val boxX: Float,
-    val boxY: Float,
-    val boxW: Float,
-    val boxH: Float,
-
-    /**
-     * Scaled image bounds in the collage coordinate system.
-     *
-     * In COVER mode, this rectangle can be larger than the tile bounds and should
-     * be clipped by the tile viewport.
-     *
-     * In CONTAIN mode, this rectangle is inside the tile bounds and empty areas
-     * can remain around it.
-     */
-    val contentX: Float,
-    val contentY: Float,
-    val contentW: Float,
-    val contentH: Float,
+    val box: CollageBox,
+    val contentBox: CollageBox,
     val scale: Float,
     val fit: TileFit,
     val cropRatio: Float,
 )
 
-data class CollageRow(val y: Float, val height: Float, val tiles: List<CollageTile>)
-data class CollageLayout(val width: Float, val height: Float, val rows: List<CollageRow>)
+data class CollageRow(
+    val y: Float,
+    val height: Float,
+    val tiles: List<CollageTile>,
+)
+
+data class CollageLayout(
+    val width: Float,
+    val height: Float,
+    val rows: List<CollageRow>,
+)
+
+enum class TileFit {
+    COVER,
+    CONTAIN,
+}
