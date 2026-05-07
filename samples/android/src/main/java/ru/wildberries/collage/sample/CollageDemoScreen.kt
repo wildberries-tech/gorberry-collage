@@ -39,6 +39,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import ru.wildberries.collage.CollageEngine
+import ru.wildberries.collage.SearchQuality
 import ru.wildberries.collage.model.CollageLayout
 import ru.wildberries.collage.model.CollageTile
 import ru.wildberries.collage.model.TileFitPolicy
@@ -131,11 +132,11 @@ private fun createDemoEngine(
 ): CollageEngine {
     return CollageEngine {
         spacing = if (zeroSpacing) 0f else 6f
-        minTileWidth = 42f
-        minTileHeight = 42f
+        minTileWidth = 60f
+        minTileHeight = 60f
         maxTilesPerRow = 4
         maxLandscapeTilesPerRow = 2
-        searchQuality = CollageEngine.SearchQuality.Balanced
+        searchQuality = SearchQuality.Balanced
         this.allowHeightOverflow = allowHeightOverflow
         tileFitPolicy = if (coverOnly) {
             TileFitPolicy.CoverOnly
