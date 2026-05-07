@@ -348,16 +348,18 @@ private fun CollageTileView(
     debugOverlay: Boolean,
 ) {
     val density = LocalDensity.current
+    val box = tile.box
+    val contentBox = tile.contentBox
 
     Box(
         modifier = Modifier
             .offset(
-                x = with(density) { tile.boxX.toDp() },
-                y = with(density) { tile.boxY.toDp() },
+                x = with(density) { box.x.toDp() },
+                y = with(density) { box.y.toDp() },
             )
             .size(
-                width = with(density) { tile.boxW.toDp() },
-                height = with(density) { tile.boxH.toDp() },
+                width = with(density) { box.width.toDp() },
+                height = with(density) { box.height.toDp() },
             )
             .clipToBounds()
             .then(
@@ -374,12 +376,12 @@ private fun CollageTileView(
             contentScale = ContentScale.FillBounds,
             modifier = Modifier
                 .offset(
-                    x = with(density) { (tile.contentX - tile.boxX).toDp() },
-                    y = with(density) { (tile.contentY - tile.boxY).toDp() },
+                    x = with(density) { (contentBox.x - box.x).toDp() },
+                    y = with(density) { (contentBox.y - box.y).toDp() },
                 )
                 .requiredSize(
-                    width = with(density) { tile.contentW.toDp() },
-                    height = with(density) { tile.contentH.toDp() },
+                    width = with(density) { contentBox.width.toDp() },
+                    height = with(density) { contentBox.height.toDp() },
                 ),
         )
 
@@ -415,7 +417,7 @@ private fun CollageTile.debugText(): String {
 }
 
 private fun CollageTile.containGapRatio(): Float {
-    val boxArea = (boxW * boxH).coerceAtLeast(1f)
-    val contentArea = (contentW * contentH).coerceAtLeast(0f)
+    val boxArea = (box.width * box.height).coerceAtLeast(1f)
+    val contentArea = (contentBox.width * contentBox.height).coerceAtLeast(0f)
     return (1f - contentArea / boxArea).coerceIn(0f, 1f)
 }

@@ -47,16 +47,19 @@ struct CollageTileView: View {
     let debugOverlay: Bool
 
     var body: some View {
+        let box = tile.box
+        let contentBox = tile.contentBox
+
         ZStack(alignment: .topLeading) {
             Image(uiImage: image)
                 .resizable()
                 .frame(
-                    width: CGFloat(tile.contentW),
-                    height: CGFloat(tile.contentH)
+                    width: CGFloat(contentBox.width),
+                    height: CGFloat(contentBox.height)
                 )
                 .offset(
-                    x: CGFloat(tile.contentX - tile.boxX),
-                    y: CGFloat(tile.contentY - tile.boxY)
+                    x: CGFloat(contentBox.x - box.x),
+                    y: CGFloat(contentBox.y - box.y)
                 )
 
             if debugOverlay {
@@ -68,15 +71,15 @@ struct CollageTileView: View {
                     .clipShape(RoundedRectangle(cornerRadius: 4))
                     .padding(4)
                     .frame(
-                        width: CGFloat(tile.boxW),
-                        height: CGFloat(tile.boxH),
+                        width: CGFloat(box.width),
+                        height: CGFloat(box.height),
                         alignment: .bottomLeading
                     )
             }
         }
         .frame(
-            width: CGFloat(tile.boxW),
-            height: CGFloat(tile.boxH),
+            width: CGFloat(box.width),
+            height: CGFloat(box.height),
             alignment: .topLeading
         )
         .clipped()
@@ -87,8 +90,8 @@ struct CollageTileView: View {
             }
         }
         .position(
-            x: CGFloat(tile.boxX + tile.boxW / 2),
-            y: CGFloat(tile.boxY + tile.boxH / 2)
+            x: CGFloat(box.x + box.width / 2),
+            y: CGFloat(box.y + box.height / 2)
         )
     }
 }
@@ -104,8 +107,8 @@ private extension CollageTile {
     }
 
     var containGapRatio: Float {
-        let boxArea = max(boxW * boxH, 1)
-        let contentArea = max(contentW * contentH, 0)
+        let boxArea = max(box.width * box.height, 1)
+        let contentArea = max(contentBox.width * contentBox.height, 0)
         return min(max(1 - contentArea / boxArea, 0), 1)
     }
 }
