@@ -6,7 +6,6 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
     alias(libs.plugins.android.kotlin.multiplatform.library)
-    alias(libs.plugins.vanniktech.mavenPublish)
 }
 
 group = "ru.wildberries"
@@ -62,49 +61,5 @@ kotlin {
 tasks.withType<KotlinJvmCompile>().configureEach {
     compilerOptions {
         jvmTarget.set(JvmTarget.JVM_17)
-    }
-}
-
-mavenPublishing {
-    publishToMavenCentral()
-    signAllPublications()
-
-    coordinates(
-        groupId = "ru.wildberries",
-        artifactId = "gorberry-collage",
-        version = version.toString(),
-    )
-
-    pom {
-        name.set("Gorberry Collage")
-        description.set(
-            "Kotlin Multiplatform adaptive collage layout engine for image groups " +
-                "in chats, reviews, feeds, and other media group previews"
-        )
-        inceptionYear.set("2026")
-        url.set("https://github.com/wildberries-tech/gorberry-collage")
-
-        // Надо уточнять перед публичным релизом.
-        // licenses {
-        //     license {
-        //         name.set("The Apache License, Version 2.0")
-        //         url.set("https://www.apache.org/licenses/LICENSE-2.0.txt")
-        //         distribution.set("repo")
-        //     }
-        // }
-
-        developers {
-            developer {
-                id.set("EktomoB")
-                name.set("Ivan Gorbunov")
-                url.set("https://github.com/EktomoB")
-            }
-        }
-
-        scm {
-            url.set("https://github.com/wildberries-tech/gorberry-collage.git")
-            connection.set("scm:git:https://github.com/wildberries-tech/gorberry-collage.git")
-            developerConnection.set("scm:git:ssh://git@github.com/wildberries-tech/gorberry-collage.git")
-        }
     }
 }
