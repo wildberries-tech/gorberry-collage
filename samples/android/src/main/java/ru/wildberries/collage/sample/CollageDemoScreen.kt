@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -35,9 +36,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
+import coil3.compose.AsyncImage
+import coil3.request.ImageRequest
 import ru.wildberries.collage.CollageEngine
 import ru.wildberries.collage.SearchQuality
 import ru.wildberries.collage.model.CollageLayout
@@ -49,7 +54,7 @@ import kotlin.math.roundToInt
 fun CollageDemoScreen() {
     var debugOverlay by rememberSaveable { mutableStateOf(false) }
     var zeroSpacing by rememberSaveable { mutableStateOf(false) }
-    var coverOnly by rememberSaveable { mutableStateOf(true) }
+    var coverOnly by rememberSaveable { mutableStateOf(false) }
 
     val normalEngine = remember(zeroSpacing, coverOnly) {
         createDemoEngine(
@@ -107,20 +112,20 @@ fun CollageDemoScreen() {
         }
 
         items(
-            items = demoCases,
-            key = { it.title },
-        ) { demoCase ->
-            DemoFeedMessage(
-                engine = if (demoCase.allowHeightOverflow) {
+            items = demoFeedItems,
+            key = { it.key },
+        ) { feedItem ->
+            DemoFeedBubble(
+                engine = if (feedItem.demoCase.allowHeightOverflow) {
                     overflowEngine
                 } else {
                     normalEngine
                 },
-                demoCase = demoCase,
+                feedItem = feedItem,
                 debugOverlay = debugOverlay,
             )
 
-            Spacer(modifier = Modifier.height(20.dp))
+            Spacer(modifier = Modifier.height(16.dp))
         }
     }
 }
@@ -132,8 +137,8 @@ private fun createDemoEngine(
 ): CollageEngine {
     return CollageEngine {
         spacing = if (zeroSpacing) 0f else 6f
-        minTileWidth = 60f
-        minTileHeight = 60f
+        minTileWidth = 42f
+        minTileHeight = 42f
         maxTilesPerRow = 4
         maxLandscapeTilesPerRow = 2
         searchQuality = SearchQuality.Balanced
@@ -147,11 +152,14 @@ private fun createDemoEngine(
 }
 
 @Composable
-private fun DemoFeedMessage(
+private fun DemoFeedBubble(
     engine: CollageEngine,
-    demoCase: DemoCase,
+    feedItem: DemoFeedItem,
     debugOverlay: Boolean,
 ) {
+    val demoCase = feedItem.demoCase
+    val widthVariant = feedItem.widthVariant
+
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(18.dp),
@@ -160,7 +168,7 @@ private fun DemoFeedMessage(
             modifier = Modifier.padding(12.dp),
         ) {
             Text(
-                text = demoCase.title,
+                text = "${demoCase.title} · ${widthVariant.title}",
                 style = MaterialTheme.typography.titleMedium,
             )
 
@@ -176,24 +184,20 @@ private fun DemoFeedMessage(
                 )
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(10.dp))
 
-            widthVariants.forEach { widthVariant ->
-                DemoWidthVariantMessage(
-                    engine = engine,
-                    demoCase = demoCase,
-                    widthVariant = widthVariant,
-                    debugOverlay = debugOverlay,
-                )
-
-                Spacer(modifier = Modifier.height(12.dp))
-            }
+            DemoSingleWidthBubble(
+                engine = engine,
+                demoCase = demoCase,
+                widthVariant = widthVariant,
+                debugOverlay = debugOverlay,
+            )
         }
     }
 }
 
 @Composable
-private fun DemoWidthVariantMessage(
+private fun DemoSingleWidthBubble(
     engine: CollageEngine,
     demoCase: DemoCase,
     widthVariant: WidthVariant,
@@ -201,102 +205,70 @@ private fun DemoWidthVariantMessage(
 ) {
     val density = LocalDensity.current
 
-    Column(
+    BoxWithConstraints(
         modifier = Modifier.fillMaxWidth(),
     ) {
-        Text(
-            text = widthVariant.title,
-            style = MaterialTheme.typography.labelMedium,
-        )
+        val parentWidthPx = with(density) { maxWidth.toPx() }
+        val minBubbleWidthPx = with(density) { 140.dp.toPx() }
+        val innerPaddingPx = with(density) { 8.dp.toPx() }
 
-        Text(
-            text = widthVariant.description,
-            style = MaterialTheme.typography.labelSmall,
-        )
+        val bubbleWidthPx = (parentWidthPx * widthVariant.fraction)
+            .coerceIn(minBubbleWidthPx, parentWidthPx)
 
-        Spacer(modifier = Modifier.height(6.dp))
+        val layoutWidthPx = (bubbleWidthPx - innerPaddingPx * 2f)
+            .coerceAtLeast(1f)
+
+        val minHeightPx = with(density) { demoCase.minHeight.toPx() }
+        val maxHeightPx = demoCase.maxHeight?.let { maxHeight ->
+            with(density) { maxHeight.toPx() }
+        } ?: defaultMessageMaxHeightPx(layoutWidthPx, density)
+
+        val layout = remember(
+            engine,
+            demoCase,
+            widthVariant,
+            layoutWidthPx,
+            minHeightPx,
+            maxHeightPx,
+        ) {
+            calculateLayout(
+                engine = engine,
+                demoCase = demoCase,
+                widthPx = layoutWidthPx,
+                minHeightPx = minHeightPx,
+                maxHeightPx = maxHeightPx,
+            )
+        }
 
         Box(
             modifier = Modifier.fillMaxWidth(),
         ) {
             Column(
                 modifier = Modifier
-                    .fillMaxWidth(widthVariant.fraction)
+                    .width(with(density) { bubbleWidthPx.toDp() })
                     .align(Alignment.CenterEnd)
                     .clip(RoundedCornerShape(14.dp))
                     .background(MaterialTheme.colorScheme.surfaceVariant)
                     .padding(8.dp),
             ) {
-                BoxWithConstraints(
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
-                    val widthPx = with(density) { maxWidth.toPx() }
-                    val minHeightPx = with(density) { demoCase.minHeight.toPx() }
-                    val maxHeightPx = demoCase.maxHeight?.let { maxHeight ->
-                        with(density) { maxHeight.toPx() }
-                    } ?: defaultMessageMaxHeightPx(widthPx, density)
+                Text(
+                    text = metadataText(
+                        demoCase = demoCase,
+                        layout = layout,
+                        layoutWidthPx = layoutWidthPx,
+                        maxHeightPx = maxHeightPx,
+                    ),
+                    style = MaterialTheme.typography.labelSmall,
+                )
 
-                    val layout = remember(
-                        engine,
-                        demoCase,
-                        widthVariant,
-                        widthPx,
-                        minHeightPx,
-                        maxHeightPx,
-                    ) {
-                        calculateLayout(
-                            engine = engine,
-                            demoCase = demoCase,
-                            widthPx = widthPx,
-                            minHeightPx = minHeightPx,
-                            maxHeightPx = maxHeightPx,
-                        )
-                    }
+                Spacer(modifier = Modifier.height(6.dp))
 
-                    Column {
-                        Text(
-                            text = buildString {
-                                append(demoCase.images.size)
-                                append(" images")
-                                append(", width=")
-                                append(widthPx.roundToInt())
-                                append("px")
-                                append(", height=")
-                                append(layout.height.roundToInt())
-                                append("px")
-
-                                demoCase.maxHeight?.let {
-                                    append(", maxHeight=")
-                                    append(maxHeightPx.roundToInt())
-                                    append("px")
-                                }
-                            },
-                            style = MaterialTheme.typography.labelSmall,
-                        )
-
-                        Spacer(modifier = Modifier.height(6.dp))
-
-                        CollageLayoutView(
-                            layout = layout,
-                            debugOverlay = debugOverlay,
-                        )
-                    }
-                }
+                CollageLayoutView(
+                    layout = layout,
+                    debugOverlay = debugOverlay,
+                )
             }
         }
-    }
-}
-
-private fun defaultMessageMaxHeightPx(
-    widthPx: Float,
-    density: androidx.compose.ui.unit.Density,
-): Float {
-    return with(density) {
-        (widthPx * 1.35f)
-            .coerceIn(
-                minimumValue = 220.dp.toPx(),
-                maximumValue = 520.dp.toPx(),
-            )
     }
 }
 
@@ -310,11 +282,48 @@ private fun calculateLayout(
     val collageImages = demoCase.images.map { it.toCollageImage() }
 
     return engine.layout(
-        collageImages,
+        images = collageImages,
         width = widthPx,
         minHeight = minHeightPx,
         maxHeight = maxHeightPx,
     )
+}
+
+private fun defaultMessageMaxHeightPx(
+    widthPx: Float,
+    density: Density,
+): Float {
+    return with(density) {
+        (widthPx * 1.35f).coerceIn(
+            minimumValue = 220.dp.toPx(),
+            maximumValue = 520.dp.toPx(),
+        )
+    }
+}
+
+private fun metadataText(
+    demoCase: DemoCase,
+    layout: CollageLayout,
+    layoutWidthPx: Float,
+    maxHeightPx: Float,
+): String {
+    return buildString {
+        append(demoCase.images.size)
+        append(" images")
+        append(", width=")
+        append(layoutWidthPx.roundToInt())
+        append("px")
+        append(", height=")
+        append(layout.height.roundToInt())
+        append("px")
+        append(", maxHeight=")
+        append(maxHeightPx.roundToInt())
+        append("px")
+
+        if (demoCase.allowHeightOverflow) {
+            append(", overflow allowed")
+        }
+    }
 }
 
 @Composable
@@ -371,8 +380,16 @@ private fun CollageTileView(
                 }
             ),
     ) {
-        Image(
-            painter = painterResource(id = tile.imageId),
+        val context = LocalContext.current
+
+        val imageRequest = remember(tile.imageId) {
+            ImageRequest.Builder(context)
+                .data(tile.imageId)
+                .build()
+        }
+
+        AsyncImage(
+            model = imageRequest,
             contentDescription = null,
             contentScale = ContentScale.FillBounds,
             modifier = Modifier

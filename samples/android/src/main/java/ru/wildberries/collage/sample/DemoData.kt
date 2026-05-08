@@ -177,3 +177,19 @@ val demoCases = listOf(
         images = repeatedDemoImages(20),
     ),
 )
+
+data class DemoFeedItem(
+    val key: String,
+    val demoCase: DemoCase,
+    val widthVariant: WidthVariant,
+)
+
+val demoFeedItems: List<DemoFeedItem> = demoCases.flatMap { demoCase ->
+    widthVariants.map { widthVariant ->
+        DemoFeedItem(
+            key = "${demoCase.title}:${widthVariant.title}",
+            demoCase = demoCase,
+            widthVariant = widthVariant,
+        )
+    }
+}
