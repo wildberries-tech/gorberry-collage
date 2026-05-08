@@ -10,13 +10,21 @@ plugins {
 }
 
 group = "ru.wildberries"
-version = "0.1.0-SNAPSHOT"
+version = "0.1.0"
 
 kotlin {
     androidLibrary {
         namespace = "ru.wildberries.collage"
         compileSdk = libs.versions.android.compileSdk.get().toInt()
         minSdk = libs.versions.android.minSdk.get().toInt()
+    }
+
+    js(IR) {
+        browser {
+            testTask {
+                enabled = false
+            }
+        }
     }
 
     val frameworkName = "GorberryCollage"
@@ -74,7 +82,7 @@ mavenPublishing {
                 "in chats, reviews, feeds, and other media group previews"
         )
         inceptionYear.set("2026")
-        url.set("https://github.com/<wb-github-org>/gorberry-collage")
+        url.set("https://github.com/wildberries-tech/gorberry-collage")
 
         // Надо уточнять перед публичным релизом.
         // licenses {
@@ -87,16 +95,16 @@ mavenPublishing {
 
         developers {
             developer {
-                id.set("ektomo")
+                id.set("EktomoB")
                 name.set("Ivan Gorbunov")
-                url.set("https://github.com/Ektomo")
+                url.set("https://github.com/EktomoB")
             }
         }
 
         scm {
-            url.set("https://github.com/<wb-github-org>/gorberry-collage")
-            connection.set("scm:git:https://github.com/<wb-github-org>/gorberry-collage.git")
-            developerConnection.set("scm:git:ssh://git@github.com/<wb-github-org>/gorberry-collage.git")
+            url.set("https://github.com/wildberries-tech/gorberry-collage.git")
+            connection.set("scm:git:https://github.com/wildberries-tech/gorberry-collage.git")
+            developerConnection.set("scm:git:ssh://git@github.com/wildberries-tech/gorberry-collage.git")
         }
     }
 }

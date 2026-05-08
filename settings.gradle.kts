@@ -16,4 +16,5 @@ dependencyResolutionManagement {
 rootProject.name = "gorberry-collage"
 include(":collage")
 include(":samples:android")
+include(":samples:web")
  

@@ -40,7 +40,19 @@ data class CollageTile(
     val scale: Float,
     val fit: TileFit,
     val cropRatio: Float,
-)
+) {
+    /**
+     * Image content X offset relative to [box].
+     */
+    val contentOffsetX: Float
+        get() = contentBox.x - box.x
+
+    /**
+     * Image content Y offset relative to [box].
+     */
+    val contentOffsetY: Float
+        get() = contentBox.y - box.y
+}
 
 data class CollageRow(
     val y: Float,

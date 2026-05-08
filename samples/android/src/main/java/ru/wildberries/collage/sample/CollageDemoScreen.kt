@@ -54,7 +54,7 @@ import kotlin.math.roundToInt
 fun CollageDemoScreen() {
     var debugOverlay by rememberSaveable { mutableStateOf(false) }
     var zeroSpacing by rememberSaveable { mutableStateOf(false) }
-    var coverOnly by rememberSaveable { mutableStateOf(false) }
+    var coverOnly by rememberSaveable { mutableStateOf(true) }
 
     val normalEngine = remember(zeroSpacing, coverOnly) {
         createDemoEngine(
@@ -380,22 +380,14 @@ private fun CollageTileView(
                 }
             ),
     ) {
-        val context = LocalContext.current
-
-        val imageRequest = remember(tile.imageId) {
-            ImageRequest.Builder(context)
-                .data(tile.imageId)
-                .build()
-        }
-
         AsyncImage(
-            model = imageRequest,
+            model = tile.imageId,
             contentDescription = null,
             contentScale = ContentScale.FillBounds,
             modifier = Modifier
                 .offset(
-                    x = with(density) { (contentBox.x - box.x).toDp() },
-                    y = with(density) { (contentBox.y - box.y).toDp() },
+                    x = with(density) { tile.contentOffsetX.toDp() },
+                    y = with(density) { tile.contentOffsetY.toDp() },
                 )
                 .requiredSize(
                     width = with(density) { contentBox.width.toDp() },
