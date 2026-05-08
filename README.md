@@ -28,10 +28,7 @@ The main product goal is simple:
 
 Screenshots from Android, iOS, and Web samples will be added before the first public release.
 
-```md
 ### Android
-
-Screenshots from Android, iOS, and Web samples will be added before the first public release.
 
 | Mixed orientations | Extreme aspect ratios |
 |---|---|
@@ -45,23 +42,22 @@ Screenshots from Android, iOS, and Web samples will be added before the first pu
 
 | Mixed orientations | Extreme aspect ratios |
 |---|---|
-| ![iOS mixed orientations](docs/images/ios_mixed_orientations.png) | ![iOS extreme aspect ratios](docs/images/ios_extreme_aspects.png) | ![iOS long group overflow](docs/images/ios_long_group_overflow.png) | 
+| ![iOS mixed orientations](docs/images/ios_mixed_orientations.png) | ![iOS extreme aspect ratios](docs/images/ios_extreme_aspects.png) |
 
 | CoverOnly + zero spacing | Long media group with overflow |
 |---|---|
-| ![iOS CoverOnly zero spacing](docs/images/android_cover_only_zero_spacing.png) | ![iOS  long group overflow](docs/images/ios_long_group_overflow.png) |
+| ![iOS CoverOnly zero spacing](docs/images/ios_cover_only_zero_spacing.png) | ![iOS long group overflow](docs/images/ios_long_group_overflow.png) |
 
 ### Web
 
-| Mixed orientations | CoverOnly + zero spacing |
+| Mixed orientations | Extreme aspect ratios |
 |---|---|
-| ![Web mixed orientations](docs/images/web_mixed_orientations.png) | ![Web CoverOnly zero spacing](docs/images/web_cover_only_zero_spacing.png) | ![Web long group](docs/images/web_long_group.png) |
+| ![Web mixed orientations](docs/images/web_mixed_orientations.png) | ![Web extreme aspect ratios](docs/images/web_extreme_aspects.png) |
 
 | CoverOnly + zero spacing | Long media group with overflow |
 |---|---|
 | ![Web CoverOnly zero spacing](docs/images/web_cover_only_zero_spacing.png) | ![Web long group overflow](docs/images/web_long_group.png) |
 
-```
 
 ---
 
@@ -450,16 +446,24 @@ tileFitPolicy = TileFitPolicy.CoverOnly
 
 In CoverOnly mode, every tile is rendered as COVER: image content fills the whole tile viewport, and there are no internal empty areas inside tiles. This is a good default for compact media previews in chats, feeds, reviews, and attachment groups.
 
-If your product scenario prefers preserving the full image content even when empty areas may appear inside a tile, use Auto
+If your product scenario prefers preserving the full image content even when empty areas may appear inside a tile, use Auto:
 
 ```kotlin
 val engine = CollageEngine {
-    spacing = 0f
     tileFitPolicy = TileFitPolicy.Auto
 }
 ```
 
 In Auto mode, the engine chooses between COVER and CONTAIN for each tile.
+
+For dense previews without gaps between tiles and without internal empty areas, combine CoverOnly with zero spacing:
+
+```kotlin
+val engine = CollageEngine {
+    spacing = 0f
+    tileFitPolicy = TileFitPolicy.CoverOnly
+}
+```
 
 `spacing = 0f` removes gaps between adjacent tiles and rows.
 
@@ -538,14 +542,5 @@ GitHub: [EktomoB](https://github.com/EktomoB)
 ---
 
 ## License
-
-License is not finalized yet.
-
-Recommended public release license: **Apache License 2.0**.
-
-After legal approval, the repository should include a `LICENSE` file with the full Apache License 2.0 text, and this section should be updated to:
-
-```md
 Gorberry Collage is licensed under the Apache License, Version 2.0.
 See [LICENSE](LICENSE) for details.
-```
