@@ -1,0 +1,41 @@
+{
+  "name": "@wildberries/gorberry-collage",
+  "version": "${version}",
+  "description": "Geometry only adaptive collage layout engine for web, Android and iOS",
+  "license": "Apache-2.0",
+  "author": {
+    "name": "Ivan Gorbunov"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/wildberries-tech/gorberry-collage.git"
+  },
+  "homepage": "https://github.com/wildberries-tech/gorberry-collage#readme",
+  "type": "module",
+  "sideEffects": false,
+  "main": "./index.js",
+  "module": "./index.js",
+  "types": "./index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "import": "./index.js"
+    }
+  },
+  "files": [
+    "index.js",
+    "index.d.ts",
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "keywords": [
+    "collage",
+    "layout",
+    "image-layout",
+    "kotlin",
+    "kotlin-multiplatform",
+    "kotlin-js",
+    "web"
+  ]
+}

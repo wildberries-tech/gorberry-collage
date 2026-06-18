@@ -17,4 +17,5 @@ rootProject.name = "gorberry-collage"
 include(":collage")
 include(":samples:android")
 include(":samples:web")
+include(":benchmarks:android")
  
