@@ -15,9 +15,17 @@ xcuserdata
 .gradle/
 build/
 */build/
+**/build/
 
 DerivedData/
 xcuserdata/
 *.xcuserstate
 *.xcworkspace/xcuserdata/
 *.xcodeproj/xcuserdata/
+
+node_modules/
+*.tgz
+.npmrc
+npm-debug.log*
+yarn-error.log*
+pnpm-debug.log*
