@@ -133,7 +133,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "set -euo pipefail\n\necho \"=== Build Kotlin Framework ===\"\necho \"SRCROOT=$SRCROOT\"\necho \"CONFIGURATION=$CONFIGURATION\"\necho \"SDK_NAME=$SDK_NAME\"\necho \"TARGET_BUILD_DIR=$TARGET_BUILD_DIR\"\necho \"FRAMEWORKS_FOLDER_PATH=$FRAMEWORKS_FOLDER_PATH\"\n\n# Use Android Studio bundled JDK. Xcode does not read your terminal env reliably.\nexport JAVA_HOME=\"/Applications/Android Studio.app/Contents/jbr/Contents/Home\"\nexport PATH=\"$JAVA_HOME/bin:$PATH\"\n\necho \"JAVA_HOME=$JAVA_HOME\"\n\"$JAVA_HOME/bin/java\" -version\n\ncd \"$SRCROOT/../../..\"\necho \"KMP root=$(pwd)\"\n\n./gradlew :collage:embedAndSignAppleFrameworkForXcode --stacktrace\n\necho \"=== Search generated framework ===\"\nfind \"$PWD/collage/build\" -name \"GorberryCollage.framework\" -type d -print || true\nfind \"$TARGET_BUILD_DIR\" -name \"GorberryCollage.framework\" -type d -print || true\n";
+			shellScript = "set -euo pipefail\nbash \"$SRCROOT/../../../scripts/build-ios-framework.sh\"\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 

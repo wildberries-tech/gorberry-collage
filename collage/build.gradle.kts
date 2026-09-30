@@ -10,7 +10,7 @@ plugins {
 }
 
 group = "ru.wildberries"
-version = "0.1.0"
+version = providers.gradleProperty("collageVersion").get()
 
 private val jsOutputModuleName = "gorberry-collage"
 
@@ -58,6 +58,7 @@ kotlin {
         iosTarget.binaries.framework {
             baseName = frameworkName
             isStatic = true
+            binaryOption("smallBinary", "true")
 
             // Unique bundle id for the generated Apple framework.
             binaryOption("bundleId", "ru.wildberries.collage.GorberryCollage")

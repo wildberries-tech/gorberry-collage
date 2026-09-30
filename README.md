@@ -85,7 +85,7 @@ iOS / Swift                    -> Swift Package Manager with XCFramework
 Web / JavaScript               -> npm package
 ```
 
-Until artifacts are published, use the source-based setup described below.
+CI builds downloadable Android AAR, iOS XCFramework and web npm archives without publishing to public registries. Pushing a version tag automatically attaches all three packages to a GitHub Release. See [build and integration instructions](docs/artifacts.md). The source-based setup below is also available.
 
 ---
 
@@ -527,7 +527,7 @@ iOS / Swift -> SwiftPM + XCFramework from GitHub Release
 Web / JavaScript -> npm package
 ```
 
-These artifacts are not published yet.
+Registry publication is not enabled. GitHub Actions is configured to build downloadable packages; see [artifact distribution](docs/artifacts.md).
 
 ---
 

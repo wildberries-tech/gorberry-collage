@@ -1,52 +1,97 @@
-# This workflow uses actions that are not certified by GitHub.
-# They are provided by a third-party and are governed by
-# separate terms of service, privacy policy, and support
-# documentation.
-# This workflow will build a Java project with Gradle and cache/restore any dependencies to improve the workflow execution time
-# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-java-with-gradle
-
-name: Java CI with Gradle
+name: Build library artifacts
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [main]
+    tags: ['v*']
   pull_request:
-    branches: [ "main" ]
-  workflow_call:
+    branches: [main]
+  workflow_dispatch:
 
 permissions:
   contents: read
 
+concurrency:
+  group: artifacts-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ !startsWith(github.ref, 'refs/tags/') }}
+
 jobs:
   build:
+    name: Build ${{ matrix.platform }}
     strategy:
+      fail-fast: false
       matrix:
         include:
-          - target: iosSimulatorArm64Test
-            os: macos-latest
-          - target: jvmTest
-            os: ubuntu-latest
-          - target: linuxX64Test
-            os: ubuntu-latest
-          - target: testAndroidHostTest
-            os: ubuntu-latest
+          - platform: android
+            os: ubuntu-24.04
+            script: build-android.sh
+          - platform: ios
+            os: macos-15
+            script: build-ios-framework.sh
+          - platform: web
+            os: ubuntu-24.04
+            script: build-web.sh
     runs-on: ${{ matrix.os }}
-
+    timeout-minutes: 45
     steps:
-    - uses: actions/checkout@v4
-    - name: Validate Gradle Wrapper
-      uses: gradle/actions/wrapper-validation@v4
-    - uses: actions/cache@v4
-      with:
-        path: |
-          ~/.konan
-        key: ${{ runner.os }}-${{ hashFiles('**/.lock') }}
-    - name: Set up JDK 17
-      uses: actions/setup-java@v3
-      with:
-        java-version: '17'
-        distribution: 'temurin'
-    - name: Build with Gradle
-      uses: gradle/gradle-build-action@ce999babab2de1c4b649dc15f0ee67e6246c994f
-      with:
-        arguments: ${{ matrix.target }}
+      - uses: actions/checkout@v5
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: gradle/actions/setup-gradle@v5
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: 'platform-tools'
+      - name: Install Android SDK
+        run: sdkmanager 'platforms;android-36' 'build-tools;35.0.0'
+      - uses: actions/setup-node@v5
+        if: matrix.platform == 'web'
+        with:
+          node-version: '22'
+      - name: Validate release tag
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          version=$(sed -n 's/^collageVersion=//p' gradle.properties | tr -d '\r')
+          test "$RELEASE_TAG" = "v$version" || { echo 'Tag must match collageVersion in gradle.properties'; exit 1; }
+      - name: Build consumer package
+        env:
+          BUILD_SCRIPT: ${{ matrix.script }}
+        run: bash "scripts/$BUILD_SCRIPT"
+      - name: Upload consumer package
+        uses: actions/upload-artifact@v4
+        with:
+          name: gorberry-collage-${{ matrix.platform }}-${{ github.sha }}
+          path: dist/${{ matrix.platform }}/
+          if-no-files-found: error
+          retention-days: 30
+          compression-level: 0
+
+  release:
+    name: Publish GitHub Release
+    needs: build
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: gorberry-collage-*-${{ github.sha }}
+          path: ${{ runner.temp }}/collage-artifacts
+          merge-multiple: false
+      - name: Validate and collect release assets
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+          EXPECTED_COMMIT: ${{ github.sha }}
+        run: python3 scripts/prepare-release-assets.py "$RUNNER_TEMP/collage-artifacts" "$RUNNER_TEMP/collage-release"
+      - name: Attach packages and publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: bash scripts/publish-github-release.sh "$RUNNER_TEMP/collage-release"
