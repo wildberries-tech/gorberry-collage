@@ -157,8 +157,14 @@ The workflow in `.github/workflows/gradle.yml` builds all three platforms,
 prepares the Swift package manifest, and publishes a GitHub release.
 
 1. Set a new `collageVersion` in `gradle.properties`, for example `0.1.1`.
-2. Commit and push the changes, including the workflow and build scripts.
-3. Open **Actions → Build library artifacts → Run workflow**, select the source
+2. Run `./gradlew kotlinUpgradePackageLock --rerun-tasks` (Windows:
+   `.\gradlew.bat kotlinUpgradePackageLock --rerun-tasks`) and include the updated
+   `kotlin-js-store/package-lock.json` in the commit. The lock file also records
+   the library's own version; changing `collageVersion` requires refreshing it
+   even when npm dependencies stay the same. `--rerun-tasks` regenerates the
+   workspace package metadata instead of reusing a cached previous version.
+3. Commit and push the changes, including the workflow and build scripts.
+4. Open **Actions → Build library artifacts → Run workflow**, select the source
    branch, enable **Publish collageVersion as a GitHub Release and Swift package**,
    and run it.
 
