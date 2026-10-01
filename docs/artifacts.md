@@ -6,16 +6,16 @@ You can use these packages without building the library or setting up a package
 registry account. The release workflow does not publish to Maven Central, npm,
 or GitHub Packages.
 
-The examples below use version `0.1.0`. Replace it with the version you downloaded.
+The examples below use version `0.1.1`. Replace it with the version you downloaded.
 
 ## Android
 
-Copy `gorberry-collage-0.1.0.aar` to your app's `app/libs/` directory, then add
+Copy `gorberry-collage-0.1.1.aar` to your app's `app/libs/` directory, then add
 these dependencies to `app/build.gradle.kts`:
 
 ```kotlin
 dependencies {
-    implementation(files("libs/gorberry-collage-0.1.0.aar"))
+    implementation(files("libs/gorberry-collage-0.1.1.aar"))
     implementation("org.jetbrains.kotlin:kotlin-stdlib:2.3.21")
 }
 ```
@@ -31,7 +31,38 @@ in the dependency declaration.
 
 ## iOS
 
-Extract `GorberryCollage-0.1.0-release.xcframework.zip`. In Xcode, add
+### Swift Package Manager
+
+Starting with the first release made by the SwiftPM-enabled workflow (`0.1.1`),
+add this repository in **Xcode → File → Add Package Dependencies**:
+
+```text
+https://github.com/wildberries-tech/gorberry-collage
+```
+
+Select a published version, starting from `0.1.1`, and add the **GorberryCollage**
+product to your app target. If you maintain a Swift package, declare:
+
+```swift
+.package(
+    url: "https://github.com/wildberries-tech/gorberry-collage",
+    from: "0.1.1"
+)
+```
+
+Then add `.product(name: "GorberryCollage", package: "gorberry-collage")` to your
+target's dependencies. The package supports iOS 14 and later. Xcode downloads
+the prebuilt XCFramework and verifies its checksum; consumers do not need
+Kotlin, Gradle, a build script, or a GitHub token for this public package.
+
+The existing `v0.1.0` tag predates SwiftPM support and is not changed. A new
+version becomes available to SwiftPM only after its release workflow succeeds.
+Use version-based dependencies, not `main`: the development manifest references
+a locally built framework, while release tags contain the remote URL and checksum.
+
+### Manual installation
+
+Extract `GorberryCollage-0.1.1-release.xcframework.zip`. In Xcode, add
 `GorberryCollage.xcframework` to your target under **Frameworks, Libraries, and
 Embedded Content**, and select **Do Not Embed**: the framework is static.
 
@@ -44,16 +75,17 @@ same Release framework for both Debug and Release app configurations. Swift
 debugging remains available; stepping through Kotlin requires a separate Debug
 build, described under [Building locally](#building-locally).
 
-If you previously built the library from source in an Xcode Run Script, remove
-that build step when switching to the downloaded framework.
+When switching from source integration to SwiftPM or a downloaded framework,
+remove the old Kotlin build Run Script and the manually linked copy of the
+framework, if present, so the app links only one copy of GorberryCollage.
 
 ## Web
 
-Copy `wildberries-gorberry-collage-0.1.0.tgz` into your web project's `vendor/`
+Copy `wildberries-gorberry-collage-0.1.1.tgz` into your web project's `vendor/`
 directory and install it:
 
 ```bash
-npm install ./vendor/wildberries-gorberry-collage-0.1.0.tgz
+npm install ./vendor/wildberries-gorberry-collage-0.1.1.tgz
 ```
 
 Commit the archive, `package.json`, and the updated lockfile to your app's
@@ -98,6 +130,11 @@ from this library's Git repository.
 All three builds take their version from `collageVersion` in `gradle.properties`.
 Change it before distributing a new version.
 
+The root `Package.swift` supports local development with the Release XCFramework
+at `collage/build/XCFrameworks/release/GorberryCollage.xcframework`. Build it first,
+then add this checkout as a local package in Xcode. The existing iOS sample still
+uses direct Kotlin integration and does not require SwiftPM.
+
 ### Debugging Kotlin on iOS
 
 The iOS script builds an optimized Release framework by default, including when
@@ -116,31 +153,44 @@ when invoked by Xcode, the script links the framework without creating an archiv
 
 ## Publishing a GitHub release
 
-The workflow in `.github/workflows/gradle.yml` builds all three platforms and
-attaches the packages to a GitHub release when you push a version tag.
+The workflow in `.github/workflows/gradle.yml` builds all three platforms,
+prepares the Swift package manifest, and publishes a GitHub release.
 
-1. Set `collageVersion` in `gradle.properties`, for example `0.1.0`.
+1. Set a new `collageVersion` in `gradle.properties`, for example `0.1.1`.
 2. Commit and push the changes, including the workflow and build scripts.
-3. Tag the commit you want to release and push the tag:
+3. Open **Actions → Build library artifacts → Run workflow**, select the source
+   branch, enable **Publish collageVersion as a GitHub Release and Swift package**,
+   and run it.
+
+Alternatively, trigger the release by tagging the source commit with `release/`:
 
 ```bash
-git tag v0.1.0
-git push origin v0.1.0
+git tag release/v0.1.1
+git push origin release/v0.1.1
 ```
 
-The tag must match the version in `gradle.properties`. For the next release,
-update the version and push a new matching tag. A version with a suffix, such as
-`0.2.0-beta.1`, is published as a prerelease.
+The trigger tag must match `release/v` plus `collageVersion`. Do not create the
+final `v0.1.1` tag yourself: CI creates it after calculating the archive checksum.
+For the next release, update the version and repeat either method. A version with
+a suffix, such as `0.2.0-beta.1`, is published as a prerelease.
 
-All three builds must succeed before publication. The release job checks package
-checksums, versions, and source commits, uploads the files to a draft, then
-publishes it. You do not need to create a release manually. Alongside the three
-packages, the release includes checksums, build information, the license, and
-this guide.
+All three builds must succeed before publication. The release job checks checksums,
+versions, and source commits, and generates `Package.swift` from the actual iOS ZIP.
+It creates a child of the source commit that changes only `Package.swift`, then
+tags that commit `v0.1.1`. The source branch and its history stay unchanged.
+`build-info.txt` records the original source commit used to compile the binaries.
+This ordering makes the final version tag immediately contain the correct manifest
+without moving an existing tag or rebuilding the ZIP after calculating its checksum.
+
+The job uploads the files to a draft and publishes it. Alongside the three packages,
+the release includes the generated manifest, checksums, build information, the
+license, and this guide. The manifest attachment is a convenience copy; SwiftPM
+reads `Package.swift` from the final Git tag.
 
 If an upload fails, **Re-run failed jobs** can resume the draft while the build
-artifacts are still available. Already published releases are not overwritten;
-use a new version for changes.
+artifacts are still available. A retry reuses the final tag only when its contents
+match exactly. Already published tags and releases are not overwritten; use a new
+version for changes, including rebuilt archives with different checksums.
 
 ### GitHub setup
 
@@ -151,13 +201,12 @@ workflow (`actions/*`, `gradle/actions/setup-gradle`, and
 
 No additional secrets are required. Build jobs use read access; the release job
 requests `contents: write` for the built-in `GITHUB_TOKEN`. Organization policies
-must allow that permission and release creation.
+must allow that permission, creation of the final `v*` tags, and release creation.
 
 ### Builds between releases
 
-Pushes to `main`, pull requests targeting `main`, and manual runs also build the
-packages. These runs only upload Actions artifacts; publication requires a tag
-push.
+Pushes to `main`, pull requests targeting `main`, and manual runs with publication
+disabled build packages and upload Actions artifacts without publishing a release.
 
 Find these builds under **Actions → Build library artifacts → run → Artifacts**.
 Artifact names include the platform and commit:
@@ -173,6 +222,11 @@ published versions.
 CI builds the Android, iOS, and web packages. The web build also installs the
 finished tarball into a temporary project, imports its public API, and checks
 layout calculations and invalid input.
+
+Release-tooling tests exercise checksum validation, tag creation, retries, and
+refusal to overwrite an existing version against temporary local Git repositories.
+The macOS job evaluates the generated Swift manifest, checks the checksum with
+SwiftPM, and type-checks an actual Swift import using the archived simulator slice.
 
 The workflow does not run the full shared test suite. Some `commonTest` tests
 still reference the removed `boxW` and `contentW` fields and need to be migrated

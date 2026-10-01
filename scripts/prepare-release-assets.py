@@ -3,17 +3,14 @@
 import hashlib
 import os
 from pathlib import Path
-import re
 import shutil
 import subprocess
 import sys
+from swift_package import prepare_manifest, read_version
 
 root = Path(__file__).resolve().parent.parent
 artifacts, output = map(Path, sys.argv[1:])
-properties = dict(line.split('=', 1) for line in (root / 'gradle.properties').read_text().splitlines() if '=' in line)
-version = properties['collageVersion']
-if not re.fullmatch(r'\d+\.\d+\.\d+(?:-[A-Za-z0-9.-]+)?', version):
-    raise SystemExit('Invalid collageVersion')
+version = read_version(root)
 if os.environ['RELEASE_TAG'] != f'v{version}':
     raise SystemExit('Release tag must match collageVersion')
 commit = subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=root, text=True).strip()
@@ -45,6 +42,9 @@ if output.exists() and any(output.iterdir()):
 output.mkdir(parents=True, exist_ok=True)
 for archive, _ in validated:
     shutil.copy2(archive, output / archive.name)
+prepare_manifest(output, os.environ['GITHUB_REPOSITORY'], root)
+manifest = output / 'Package.swift'
+validated.append((manifest, hashlib.sha256(manifest.read_bytes()).hexdigest()))
 (output / 'SHA256SUMS').write_text(''.join(f'{digest}  {archive.name}\n' for archive, digest in validated))
 (output / 'build-info.txt').write_text(f'version={version}\ncommit={commit}\nworking_tree=clean\n')
 shutil.copy2(root / 'docs/artifacts.md', output / 'INTEGRATION.md')

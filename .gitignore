@@ -31,3 +31,9 @@ yarn-error.log*
 pnpm-debug.log*
 # Local distribution packages
 /dist/
+/samples/android/release/
+
+# Swift Package Manager local build state
+.build/
+.swiftpm/
+__pycache__/
