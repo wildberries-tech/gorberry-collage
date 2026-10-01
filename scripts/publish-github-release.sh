@@ -9,6 +9,7 @@ files=(
   "$assets_dir/gorberry-collage-$version.aar"
   "$assets_dir/GorberryCollage-$version-release.xcframework.zip"
   "$assets_dir/wildberries-gorberry-collage-$version.tgz"
+  "$assets_dir/Package.swift"
   "$assets_dir/SHA256SUMS"
   "$assets_dir/build-info.txt"
   "$assets_dir/INTEGRATION.md"
@@ -38,9 +39,12 @@ else
   notes=$(mktemp)
   trap 'rm -f "$notes"' EXIT
   cat > "$notes" <<'NOTES'
-Download the Android AAR, iOS XCFramework ZIP or web npm TGZ from Assets.
+For iOS, add this GitHub repository in Xcode > Add Package Dependencies and select this version.
+Swift Package Manager downloads the prebuilt GorberryCollage XCFramework automatically.
+For manual installation, download the Android AAR, iOS XCFramework ZIP or web npm TGZ from Assets.
 Installation instructions are in INTEGRATION.md; SHA256SUMS verifies the packages.
-The source commit and library version are recorded in build-info.txt.
+The library source commit and version are recorded in build-info.txt.
+The release tag adds the generated Package.swift to that source commit.
 NOTES
   create_args=(release create "$RELEASE_TAG" --repo "$GH_REPO" --verify-tag --draft
     --title "Gorberry Collage $RELEASE_TAG" --notes-file "$notes")

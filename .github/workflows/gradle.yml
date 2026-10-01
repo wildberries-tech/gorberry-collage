@@ -3,21 +3,55 @@ name: Build library artifacts
 on:
   push:
     branches: [main]
-    tags: ['v*']
+    tags: ['release/v*']
   pull_request:
     branches: [main]
   workflow_dispatch:
+    inputs:
+      publish_release:
+        description: 'Publish collageVersion as a GitHub Release and Swift package'
+        type: boolean
+        default: false
 
 permissions:
   contents: read
 
 concurrency:
-  group: artifacts-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: ${{ !startsWith(github.ref, 'refs/tags/') }}
+  group: artifacts-${{ github.workflow }}-${{ github.ref }}-${{ inputs.publish_release || false }}
+  cancel-in-progress: ${{ !startsWith(github.ref, 'refs/tags/') && !inputs.publish_release }}
 
 jobs:
+  prepare:
+    name: Check release tooling and version
+    runs-on: ubuntu-24.04
+    outputs:
+      tag: ${{ steps.version.outputs.tag }}
+      publish: ${{ steps.version.outputs.publish }}
+    steps:
+      - uses: actions/checkout@v5
+      - name: Test Swift package release tooling
+        run: python3 -m unittest discover -s scripts -p 'test_*.py' -v
+      - name: Read and validate version
+        id: version
+        env:
+          PUBLISH_RELEASE: ${{ (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/release/v')) || (github.event_name == 'workflow_dispatch' && inputs.publish_release) }}
+        run: |
+          python3 - <<'PY'
+          import os
+          import sys
+          sys.path.insert(0, 'scripts')
+          from swift_package import read_version
+          tag = f'v{read_version()}'
+          ref = os.environ['GITHUB_REF']
+          if ref.startswith('refs/tags/') and ref != f'refs/tags/release/{tag}':
+              raise SystemExit('Use release/' + tag + ' to build a new release; final v* tags are created by CI')
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as output:
+              output.write(f'tag={tag}\npublish={os.environ["PUBLISH_RELEASE"]}\n')
+          PY
+
   build:
     name: Build ${{ matrix.platform }}
+    needs: prepare
     strategy:
       fail-fast: false
       matrix:
@@ -49,17 +83,13 @@ jobs:
         if: matrix.platform == 'web'
         with:
           node-version: '22'
-      - name: Validate release tag
-        if: startsWith(github.ref, 'refs/tags/')
-        env:
-          RELEASE_TAG: ${{ github.ref_name }}
-        run: |
-          version=$(sed -n 's/^collageVersion=//p' gradle.properties | tr -d '\r')
-          test "$RELEASE_TAG" = "v$version" || { echo 'Tag must match collageVersion in gradle.properties'; exit 1; }
       - name: Build consumer package
         env:
           BUILD_SCRIPT: ${{ matrix.script }}
         run: bash "scripts/$BUILD_SCRIPT"
+      - name: Validate Swift package and simulator import
+        if: matrix.platform == 'ios'
+        run: bash scripts/check-swift-package.sh
       - name: Upload consumer package
         uses: actions/upload-artifact@v4
         with:
@@ -71,10 +101,13 @@ jobs:
 
   release:
     name: Publish GitHub Release
-    needs: build
-    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    needs: [prepare, build]
+    if: needs.prepare.outputs.publish == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 10
+    concurrency:
+      group: gorberry-collage-release
+      cancel-in-progress: false
     permissions:
       contents: write
     steps:
@@ -86,12 +119,16 @@ jobs:
           merge-multiple: false
       - name: Validate and collect release assets
         env:
-          RELEASE_TAG: ${{ github.ref_name }}
+          RELEASE_TAG: ${{ needs.prepare.outputs.tag }}
           EXPECTED_COMMIT: ${{ github.sha }}
         run: python3 scripts/prepare-release-assets.py "$RUNNER_TEMP/collage-artifacts" "$RUNNER_TEMP/collage-release"
+      - name: Create immutable version tag with Swift manifest
+        env:
+          EXPECTED_COMMIT: ${{ github.sha }}
+        run: python3 scripts/swift_package.py tag "$RUNNER_TEMP/collage-release"
       - name: Attach packages and publish release
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
-          RELEASE_TAG: ${{ github.ref_name }}
+          RELEASE_TAG: ${{ needs.prepare.outputs.tag }}
         run: bash scripts/publish-github-release.sh "$RUNNER_TEMP/collage-release"
