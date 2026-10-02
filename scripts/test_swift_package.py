@@ -113,16 +113,19 @@ class SwiftPackageReleaseTests(unittest.TestCase):
         for filename in ['prepare-release-assets.py', 'swift_package.py']:
             shutil.copyfile(SCRIPTS / filename, script_dir / filename)
         incoming = self.base / 'incoming'
-        packages = {'android': 'gorberry-collage-0.1.1.aar',
-                    'ios': self.archive.name,
-                    'web': 'wildberries-gorberry-collage-0.1.1.tgz'}
-        for platform, filename in packages.items():
+        packages = {'android': ['gorberry-collage-0.1.1.aar', 'gorberry-collage-0.1.1-maven.zip'],
+                    'ios': [self.archive.name],
+                    'web': ['wildberries-gorberry-collage-0.1.1.tgz']}
+        for platform, filenames in packages.items():
             folder = incoming / f'gorberry-collage-{platform}-{self.source}'
             folder.mkdir(parents=True)
-            content = self.archive.read_bytes() if platform == 'ios' else b'package fixture'
-            (folder / filename).write_bytes(content)
-            digest = hashlib.sha256(content).hexdigest()
-            (folder / 'SHA256SUMS').write_text(f'{digest}  {filename}\n')
+            checksums = []
+            for filename in filenames:
+                content = self.archive.read_bytes() if platform == 'ios' else b'package fixture'
+                (folder / filename).write_bytes(content)
+                digest = hashlib.sha256(content).hexdigest()
+                checksums.append(f'{digest}  {filename}\n')
+            (folder / 'SHA256SUMS').write_text(''.join(checksums))
             (folder / 'build-info.txt').write_text(
                 f'version=0.1.1\ncommit={self.source}\nworking_tree=clean\n')
         output = self.base / 'release'
@@ -132,16 +135,40 @@ class SwiftPackageReleaseTests(unittest.TestCase):
                    str(incoming), str(output)]
         subprocess.run(command, env=env, check=True, capture_output=True, text=True)
         checksums = (output / 'SHA256SUMS').read_text().splitlines()
-        self.assertEqual(len(checksums), 4)
+        self.assertEqual(len(checksums), 5)
         for entry in checksums:
             digest, name = entry.split()
             self.assertEqual(hashlib.sha256((output / name).read_bytes()).hexdigest(), digest)
         self.assertEqual((output / 'Package.swift').read_bytes(), (self.assets / 'Package.swift').read_bytes())
-        (incoming / f'gorberry-collage-ios-{self.source}' / self.archive.name).write_bytes(b'corrupt')
+        for platform, filename in [('ios', self.archive.name),
+                                   ('android', 'gorberry-collage-0.1.1-maven.zip')]:
+            archive = incoming / f'gorberry-collage-{platform}-{self.source}' / filename
+            original = archive.read_bytes()
+            archive.write_bytes(b'corrupt')
+            result = subprocess.run(command[:-1] + [str(self.base / 'bad-release')], env=env,
+                                    capture_output=True, text=True)
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn('checksum mismatch', result.stderr)
+            self.assertFalse((self.base / 'bad-release').exists())
+            archive.write_bytes(original)
+
+        android = incoming / f'gorberry-collage-android-{self.source}'
+        checksum_file = android / 'SHA256SUMS'
+        original = checksum_file.read_text()
+        for invalid in [original.splitlines()[0] + '\n', original + original,
+                        original + '0  unexpected.zip\n']:
+            checksum_file.write_text(invalid)
+            result = subprocess.run(command[:-1] + [str(self.base / 'bad-release')], env=env,
+                                    capture_output=True, text=True)
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn('missing or unexpected package checksum', result.stderr)
+            self.assertFalse((self.base / 'bad-release').exists())
+        checksum_file.write_text(original)
+        (android / 'gorberry-collage-0.1.1-maven.zip').unlink()
         result = subprocess.run(command[:-1] + [str(self.base / 'bad-release')], env=env,
                                 capture_output=True, text=True)
         self.assertNotEqual(result.returncode, 0)
-        self.assertIn('checksum mismatch', result.stderr)
+        self.assertIn('missing or empty package', result.stderr)
         self.assertFalse((self.base / 'bad-release').exists())
 
 

@@ -7,6 +7,7 @@ assets_dir="${1:?Prepared release assets directory is required}"
 version="${RELEASE_TAG#v}"
 files=(
   "$assets_dir/gorberry-collage-$version.aar"
+  "$assets_dir/gorberry-collage-$version-maven.zip"
   "$assets_dir/GorberryCollage-$version-release.xcframework.zip"
   "$assets_dir/wildberries-gorberry-collage-$version.tgz"
   "$assets_dir/Package.swift"
@@ -41,6 +42,7 @@ else
   cat > "$notes" <<'NOTES'
 For iOS, add this GitHub repository in Xcode > Add Package Dependencies and select this version.
 Swift Package Manager downloads the prebuilt GorberryCollage XCFramework automatically.
+For Android Maven integration, download the Maven repository ZIP (AAR, POM, Gradle metadata and sources).
 For manual installation, download the Android AAR, iOS XCFramework ZIP or web npm TGZ from Assets.
 Installation instructions are in INTEGRATION.md; SHA256SUMS verifies the packages.
 The library source commit and version are recorded in build-info.txt.

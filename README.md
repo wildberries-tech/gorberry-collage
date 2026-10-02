@@ -78,12 +78,12 @@ The core library has no dependency on Coil, Glide, SwiftUI, UIKit, Compose, Reac
 The release workflow provides downloadable packages:
 
 ```text
-Android                        -> AAR from GitHub Releases
+Android                        -> AAR and Maven repository ZIP from GitHub Releases
 iOS / Swift                    -> Swift Package Manager with XCFramework
 Web / JavaScript               -> npm tarball from GitHub Releases
 ```
 
-CI builds the Android AAR, iOS XCFramework and web npm archive without publishing to public registries. Run the workflow with publication enabled or push a `release/v<version>` tag; CI creates the final `v<version>` tag with its Swift package manifest and attaches all three packages to a GitHub Release. SwiftPM support starts with the next release, `0.1.1`; the existing `0.1.0` tag is unchanged. See [build and integration instructions](docs/artifacts.md). The source-based setup below is also available.
+CI builds the Android AAR and Maven repository ZIP, iOS XCFramework and web npm archive without publishing to public registries. Run the workflow with publication enabled or push a `release/v<version>` tag; CI creates the final `v<version>` tag with its Swift package manifest and attaches the packages to a GitHub Release. SwiftPM is available from `0.1.1`; the Android Maven ZIP will be available in the next release after `0.1.1`. See [build and integration instructions](docs/artifacts.md). The source based setup below is also available.
 
 ---
 
@@ -205,46 +205,43 @@ The public npm package is planned, but not published yet.
 
 ## Package installation
 
-### Android / Kotlin Multiplatform (Maven Central planned)
+### Android / Maven
 
-Maven Central publication is not enabled. Currently use the [downloadable AAR](docs/artifacts.md#android). Future registry coordinates:
+Download the Maven repository ZIP from a release that includes it, extract it
+locally or import it into your internal Maven server, and configure that
+repository in Gradle. The upcoming `0.1.2` release can then be consumed as:
 
 ```kotlin
-repositories {
-    mavenCentral()
-}
-
 dependencies {
-    implementation("ru.wildberries:gorberry-collage:0.1.0")
+    implementation("ru.wildberries:gorberry-collage-android:0.1.2")
 }
 ```
 
-For Kotlin Multiplatform:
-
-```kotlin
-kotlin {
-    sourceSets {
-        commonMain.dependencies {
-            implementation("ru.wildberries:gorberry-collage:0.1.0")
-        }
-    }
-}
-```
+The ZIP contains the AAR, POM, Gradle metadata, sources and checksums. These are
+Android-only coordinates, suitable for an Android app or KMP `androidMain`.
+Maven Central publication and a full KMP `commonMain` publication are not enabled.
+The standalone AAR remains available. See [Android installation](docs/artifacts.md#android).
 
 ### iOS / Swift
 
 ```swift
 .package(
     url: "https://github.com/wildberries-tech/gorberry-collage",
-    from: "0.1.1"
+    from: "0.1.2"
 )
 ```
 
-Once `0.1.1` is released, add the repository URL in Xcode's **Add Package Dependencies**, select version `0.1.1` or later, and add the **GorberryCollage** product to your app. The release manifest points to the prebuilt XCFramework ZIP and includes its checksum. No Kotlin or Gradle installation is needed. See [SwiftPM integration](docs/artifacts.md#swift-package-manager).
+SwiftPM is available from `0.1.1`. After `0.1.2` is released, add the repository URL in Xcode's **Add Package Dependencies**, select `0.1.2`, and add the **GorberryCollage** product to your app. The release manifest points to the prebuilt XCFramework ZIP and includes its checksum. No Kotlin or Gradle installation is needed. See [SwiftPM integration](docs/artifacts.md#swift-package-manager).
 
 ### Web / JavaScript
 
-An npm package is planned. The exact public JavaScript / TypeScript API may change before the first Web release.
+Download the npm tarball from the release and install it locally:
+
+```bash
+npm install ./vendor/wildberries-gorberry-collage-0.1.2.tgz
+```
+
+See [Web installation](docs/artifacts.md#web). Publication to the public npm registry is not enabled.
 
 ---
 
