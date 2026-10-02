@@ -12,7 +12,8 @@ let package = Package(
     targets: [
         .binaryTarget(
             name: "GorberryCollage",
-            path: "collage/build/XCFrameworks/release/GorberryCollage.xcframework"
+            url: "https://github.com/wildberries-tech/gorberry-collage/releases/download/v0.1.3/GorberryCollage-0.1.3-release.xcframework.zip",
+            checksum: "cb4dc16538e828a8ca76051449f466982fa978424b76537a38cef4a4b94a969c"
         )
     ]
 )
