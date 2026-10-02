@@ -17,24 +17,30 @@ commit = subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=root, text=Tr
 if os.environ['EXPECTED_COMMIT'] != commit:
     raise SystemExit('Checkout must match the triggering commit')
 packages = {
-    'android': f'gorberry-collage-{version}.aar',
-    'ios': f'GorberryCollage-{version}-release.xcframework.zip',
-    'web': f'wildberries-gorberry-collage-{version}.tgz',
+    'android': [f'gorberry-collage-{version}.aar', f'gorberry-collage-{version}-maven.zip'],
+    'ios': [f'GorberryCollage-{version}-release.xcframework.zip'],
+    'web': [f'wildberries-gorberry-collage-{version}.tgz'],
 }
 validated = []
-for platform, filename in packages.items():
+for platform, filenames in packages.items():
     folder = artifacts / f'gorberry-collage-{platform}-{commit}'
     info = dict(line.split('=', 1) for line in (folder / 'build-info.txt').read_text().splitlines())
     if info != {'version': version, 'commit': commit, 'working_tree': 'clean'}:
         raise SystemExit(f'{platform}: expected a clean build of {version} at {commit}')
-    digest, checksum_name = (folder / 'SHA256SUMS').read_text().strip().split(maxsplit=1)
-    archive = folder / filename
-    if checksum_name != filename or not archive.is_file() or archive.stat().st_size == 0:
-        raise SystemExit(f'{platform}: missing or unexpected package')
-    actual = hashlib.sha256(archive.read_bytes()).hexdigest()
-    if digest != actual:
-        raise SystemExit(f'{platform}: checksum mismatch')
-    validated.append((archive, actual))
+    entries = [line.split() for line in (folder / 'SHA256SUMS').read_text().splitlines()]
+    if any(len(entry) != 2 for entry in entries):
+        raise SystemExit(f'{platform}: invalid checksum file')
+    checksums = {name: digest for digest, name in entries}
+    if len(entries) != len(checksums) or set(checksums) != set(filenames):
+        raise SystemExit(f'{platform}: missing or unexpected package checksum')
+    for filename in filenames:
+        archive = folder / filename
+        if not archive.is_file() or archive.stat().st_size == 0:
+            raise SystemExit(f'{platform}: missing or empty package: {filename}')
+        actual = hashlib.sha256(archive.read_bytes()).hexdigest()
+        if checksums[filename] != actual:
+            raise SystemExit(f'{platform}: checksum mismatch: {filename}')
+        validated.append((archive, actual))
 
 # Don't prepare a partial release when one platform failed validation.
 if output.exists() and any(output.iterdir()):
@@ -49,4 +55,4 @@ validated.append((manifest, hashlib.sha256(manifest.read_bytes()).hexdigest()))
 (output / 'build-info.txt').write_text(f'version={version}\ncommit={commit}\nworking_tree=clean\n')
 shutil.copy2(root / 'docs/artifacts.md', output / 'INTEGRATION.md')
 shutil.copy2(root / 'LICENSE', output / 'LICENSE')
-print(f'Validated all three packages for v{version} ({commit})')
+print(f'Validated packages from all three platforms for v{version} ({commit})')

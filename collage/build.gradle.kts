@@ -7,10 +7,50 @@ plugins {
     alias(libs.plugins.kotlinMultiplatform)
     alias(libs.plugins.android.kotlin.multiplatform.library)
     alias(libs.plugins.kotlin.npm.publish)
+    `maven-publish`
 }
 
 group = "ru.wildberries"
 version = providers.gradleProperty("collageVersion").get()
+
+val androidMavenRepository = layout.buildDirectory.dir("android-maven/$version")
+publishing {
+    publications.withType<MavenPublication>().configureEach {
+        artifactId = "gorberry-collage" + if (name == "kotlinMultiplatform") "" else "-${name.lowercase()}"
+        pom {
+            name.set("Gorberry Collage")
+            description.set("Layout calculation engine for photo collages")
+            url.set("https://github.com/wildberries-tech/gorberry-collage")
+            licenses {
+                license {
+                    name.set("The Apache License, Version 2.0")
+                    url.set("https://www.apache.org/licenses/LICENSE-2.0.txt")
+                }
+            }
+            scm {
+                url.set("https://github.com/wildberries-tech/gorberry-collage")
+                connection.set("scm:git:https://github.com/wildberries-tech/gorberry-collage.git")
+            }
+        }
+    }
+    repositories {
+        maven {
+            name = "AndroidRelease"
+            url = uri(androidMavenRepository)
+        }
+    }
+}
+
+tasks.register<Zip>("packageAndroidMaven") {
+    dependsOn("publishAndroidPublicationToAndroidReleaseRepository")
+    from(androidMavenRepository) {
+        include("ru/wildberries/gorberry-collage-android/**")
+    }
+    destinationDirectory.set(layout.buildDirectory.dir("distributions"))
+    archiveFileName.set("gorberry-collage-$version-maven.zip")
+    isPreserveFileTimestamps = false
+    isReproducibleFileOrder = true
+}
 
 private val jsOutputModuleName = "gorberry-collage"
 
