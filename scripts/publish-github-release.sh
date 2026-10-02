@@ -42,6 +42,7 @@ else
   cat > "$notes" <<'NOTES'
 For iOS, add this GitHub repository in Xcode > Add Package Dependencies and select this version.
 Swift Package Manager downloads the prebuilt GorberryCollage XCFramework automatically.
+Android consumers can use JitPack with this release tag; see INTEGRATION.md for coordinates and repository setup.
 For Android Maven integration, download the Maven repository ZIP (AAR, POM, Gradle metadata and sources).
 For manual installation, download the Android AAR, iOS XCFramework ZIP or web npm TGZ from Assets.
 Installation instructions are in INTEGRATION.md; SHA256SUMS verifies the packages.
