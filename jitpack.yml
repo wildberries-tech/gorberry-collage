@@ -1,0 +1,6 @@
+jdk:
+  - openjdk21
+before_install:
+  - bash scripts/setup-jitpack-android.sh
+install:
+  - bash ./gradlew :collage:publishAndroidPublicationToMavenLocal --stacktrace

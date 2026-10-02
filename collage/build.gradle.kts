@@ -13,10 +13,25 @@ plugins {
 group = "ru.wildberries"
 version = providers.gradleProperty("collageVersion").get()
 
+val isJitPack = providers.environmentVariable("JITPACK").orNull == "true"
+val jitpackGroup = providers.environmentVariable("GROUP").orElse("com.github.wildberries-tech").get()
+val jitpackArtifact = providers.environmentVariable("ARTIFACT").orElse("gorberry-collage").get()
+val jitpackVersion = providers.environmentVariable("VERSION").orNull
+if (isJitPack) {
+    require(!jitpackVersion.isNullOrBlank()) { "JitPack must provide VERSION (the requested Git tag or commit)" }
+}
+
 val androidMavenRepository = layout.buildDirectory.dir("android-maven/$version")
 publishing {
     publications.withType<MavenPublication>().configureEach {
         artifactId = "gorberry-collage" + if (name == "kotlinMultiplatform") "" else "-${name.lowercase()}"
+        if (isJitPack) {
+            groupId = jitpackGroup
+            version = requireNotNull(jitpackVersion)
+            // JitPack exports one Android artifact at the repository's root coordinates.
+            // Keep the unpublished KMP root distinct from that Android publication.
+            artifactId = if (name == "android") jitpackArtifact else "$jitpackArtifact-${name.lowercase()}"
+        }
         pom {
             name.set("Gorberry Collage")
             description.set("Layout calculation engine for photo collages")

@@ -87,6 +87,9 @@ jobs:
         env:
           BUILD_SCRIPT: ${{ matrix.script }}
         run: bash "scripts/$BUILD_SCRIPT"
+      - name: Validate JitPack Android publication locally
+        if: matrix.platform == 'android'
+        run: python3 scripts/check-jitpack.py
       - name: Validate Swift package and simulator import
         if: matrix.platform == 'ios'
         run: bash scripts/check-swift-package.sh
